@@ -1,0 +1,107 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  /* Matches Admin UI: Premium Gold & Black Liquid Glass Theme */
+  background-color: #020617;
+  /* slate-950 */
+  color: #F8FAFC;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  /* Matches Admin UI: Ambient Mesh Background */
+  background-image:
+    radial-gradient(circle at 50% 0%, rgba(245, 158, 11, 0.15), transparent 40%),
+    radial-gradient(circle at 100% 100%, rgba(234, 179, 8, 0.1), transparent 30%);
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@layer components {
+
+  /* The core Liquid Glass Effect - Gold Tint (Matches Admin UI) */
+  .glass-panel {
+    @apply bg-slate-900/60 backdrop-blur-2xl border border-white/10 shadow-2xl rounded-2xl relative overflow-hidden;
+  }
+
+  /* Matches Admin UI Button Style EXACTLY */
+  .glass-button {
+    @apply px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-600 border border-amber-400/20 transition-all duration-300 text-slate-950 font-bold tracking-wide shadow-lg hover:shadow-amber-glow hover:brightness-110 active:scale-95;
+  }
+
+  /* Helper for secondary/outline buttons if needed, keeping broadly consistent */
+  .glass-button-secondary {
+    @apply px-4 py-2 rounded-xl border border-white/10 hover:bg-white/5 transition-all duration-300 text-gray-300 font-medium;
+  }
+
+  /* Matches Admin UI Input Style EXACTLY */
+  .glass-input {
+    @apply w-full px-4 py-3 bg-slate-950/50 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-amber-500/50 focus:bg-slate-900/80 transition-all duration-300 focus:ring-2 focus:ring-amber-500/10;
+  }
+
+  /* Custom scrollbar matching Admin UI */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-white/10 rounded-full hover:bg-amber-500/50 transition-colors;
+  }
+}
+
+/* Retaining animations as they don't conflict with tones */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.8s ease-out forwards;
+}
+
+.animate-slide-up {
+  opacity: 0;
+  animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.delay-100 {
+  animation-delay: 100ms;
+}
+
+.delay-200 {
+  animation-delay: 200ms;
+}
+
+.delay-300 {
+  animation-delay: 300ms;
+}

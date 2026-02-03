@@ -1,0 +1,19 @@
+# PROJECT: LIQUID GLASS OS - AI BEHAVIOR RULES
+
+## 1. VISUAL STANDARDS (NON-NEGOTIABLE)
+- **Glass Chemistry:** NEVER use black-based transparency. ALWAYS use White-based: `rgba(255, 255, 255, 0.6)`.
+- **Hardcoding Banned:** NEVER use `bg-slate-*`, `bg-gray-*`, `bg-white`, or `bg-black` on containers. Use semantic tokens (e.g., `glass-panel`) ONLY.
+- **Status Colors:** NEVER use solid `bg-green-500` or `bg-red-500`. Use translucent `bg-success-subtle` or `bg-danger-subtle`.
+
+## 2. REFACTORING PROTOCOLS (DO NOT DELETE FUNCTIONALITY)
+- **AST Transformation Only:** When refactoring styles, use AST (Abstract Syntax Tree) logic.
+- **The "Functional Veto":** NEVER delete a `<button>`, `<a>`, or `onClick` element to satisfy a style rule.
+- **Preservation:** If a component violates a style rule, RETAIN the component and SWAP the class. Do not remove the component.
+
+## 3. UNIFORMITY & INHERITANCE
+- **Modal Uniformity:** ALL Modals/Dialogs must utilize the global `GlassWrapper` component.
+- **Deep Inheritance:** Sub-routes (Details/Settings) must inherit the Main Layout background. Do not apply specific backgrounds to child pages.
+
+## 4. LINTING & SAFETY
+- **No Phantom Tokens:** Do not invent class names. Check `index.css` before applying a class.
+- **Visual Check:** If a container looks "Solid Grey" or "Solid White," it is BROKEN. It must be "Frosted."

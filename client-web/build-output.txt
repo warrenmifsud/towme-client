@@ -1,0 +1,34 @@
+
+> client-web@0.0.0 build
+> tsc -b && vite build
+
+vite v7.3.1 building client environment for production...
+transforming...
+✓ 1833 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                   0.68 kB │ gzip:  0.38 kB
+dist/assets/index-B5BHlUds.css                   42.13 kB │ gzip:  7.04 kB
+dist/assets/arrow-right-CZUvVi6t.js               0.17 kB │ gzip:  0.16 kB
+dist/assets/arrow-left-DDHZpcm0.js                0.17 kB │ gzip:  0.16 kB
+dist/assets/log-out-DP0tTjLY.js                   0.23 kB │ gzip:  0.19 kB
+dist/assets/shield-check-Bq7SLG2p.js              0.32 kB │ gzip:  0.25 kB
+dist/assets/phone-D_y5kF_h.js                     0.32 kB │ gzip:  0.23 kB
+dist/assets/lock-u_IZV8SN.js                      0.41 kB │ gzip:  0.28 kB
+dist/assets/wrench-Cxk3NgLc.js                    0.51 kB │ gzip:  0.35 kB
+dist/assets/truck-DOlH2LR0.js                     0.62 kB │ gzip:  0.36 kB
+dist/assets/mail-_aBJNhZs.js                      0.80 kB │ gzip:  0.44 kB
+dist/assets/useProgressiveLocation-CkeL-AcW.js    3.65 kB │ gzip:  1.54 kB
+dist/assets/Home-vF66VUds.js                      3.71 kB │ gzip:  1.32 kB
+dist/assets/Suspended-DLbyV1Z7.js                 3.89 kB │ gzip:  1.55 kB
+dist/assets/Login-DClqtMUt.js                     5.24 kB │ gzip:  1.88 kB
+dist/assets/Signup-D4a838V-.js                    7.67 kB │ gzip:  2.35 kB
+dist/assets/Vendors-Ny6kSXqF.js                   7.88 kB │ gzip:  2.59 kB
+dist/assets/Tracking-CT-aGGPO.js                 10.07 kB │ gzip:  3.48 kB
+dist/assets/google-maps-D9n3UHFs.js              20.50 kB │ gzip:  7.61 kB
+dist/assets/vendor-DWmiOiKD.js                   38.94 kB │ gzip: 13.91 kB
+dist/assets/query-CFZ6410M.js                    41.44 kB │ gzip: 12.93 kB
+dist/assets/ServiceSelection-D1UmbNUY.js         51.21 kB │ gzip: 16.19 kB
+dist/assets/supabase-fVq5vccW.js                167.14 kB │ gzip: 44.27 kB
+dist/assets/index-ZNgoAt3P.js                   191.04 kB │ gzip: 61.05 kB
+✓ built in 1.25s

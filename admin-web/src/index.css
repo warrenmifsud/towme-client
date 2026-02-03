@@ -1,0 +1,440 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  /* --- Default Dark / Gold Theme Variables --- */
+  --bg-primary: #020617;
+  /* slate-950 */
+  --text-primary: #F8FAFC;
+  /* slate-50 */
+  --text-secondary: #94A3B8;
+  /* slate-400 */
+
+  --glass-bg: rgba(255, 255, 255, 0.6);
+  /* WHITE-BASED FROSTED GLASS (changed from dark slate) */
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+
+  --input-bg: rgba(2, 6, 23, 0.5);
+  /* slate-950/50 */
+  --input-text: #ffffff;
+  --input-border: rgba(255, 255, 255, 0.1);
+  --input-placeholder: #64748b;
+  /* slate-500 */
+
+  /* Ambient Background (Dark) */
+  --bg-gradient:
+    radial-gradient(circle at 50% 0%, rgba(245, 158, 11, 0.15), transparent 40%),
+    radial-gradient(circle at 100% 100%, rgba(234, 179, 8, 0.1), transparent 30%);
+
+  /* Accent Colors (Gold/Amber for Dark Mode) */
+  --accent-primary: #f59e0b;
+  /* amber-500 */
+  --accent-secondary: #ca8a04;
+  /* yellow-600 */
+  --accent-gradient: linear-gradient(to right, #f59e0b, #ca8a04);
+  --accent-glow: rgba(245, 158, 11, 0.4);
+
+  /* ========================================
+     DEPTH SYSTEM - White-Based Glass Layers
+     ======================================== */
+
+  /* Layer 0: Background (Wallpaper) */
+  --layer-0-bg: transparent;
+  /* Wallpaper shows through */
+
+  /* Layer 1: Main Card (Primary Glass Surface) */
+  --layer-1-bg: rgba(255, 255, 255, 0.6);
+  /* 60% opacity - Main cards */
+  --layer-1-border: rgba(255, 255, 255, 0.5);
+  --layer-1-blur: blur(20px);
+
+  /* Layer 2: Inner Card (Lighter/More Transparent) */
+  --layer-2-bg: rgba(255, 255, 255, 0.4);
+  /* 40% opacity - Inner sections */
+  --layer-2-border: rgba(255, 255, 255, 0.3);
+  --layer-2-blur: blur(16px);
+
+  /* Layer 3: Modal/Floating (Distinct but Translucent) */
+  --layer-3-bg: rgba(255, 255, 255, 0.5);
+  /* 50% opacity - Modals */
+  --layer-3-border: rgba(255, 255, 255, 0.6);
+  --layer-3-blur: blur(24px);
+
+  /* Layer 4: Overlay/Backdrop */
+  --layer-4-bg: rgba(0, 0, 0, 0.5);
+  /* Dark backdrop for modals */
+  --layer-4-blur: blur(8px);
+}
+
+/* --- Liquid Glass OS Theme (Light/Frosted) --- */
+.theme-liquid {
+  /* Frosted White / Translucent Base */
+  --bg-primary: #f8fafc;
+  /* slate-50 - cleaner white for liquid */
+  --text-primary: #0f172a;
+  /* slate-900 - Deepest Grey */
+  --text-secondary: #334155;
+  /* slate-700 - Darkened for better contrast */
+
+  /* The "Liquid" Effect: High blur, light opacity */
+  --glass-bg: rgba(255, 255, 255, 0.65);
+  /* Increased opacity for better contrast */
+  --glass-border: rgba(255, 255, 255, 0.8);
+  --glass-shadow:
+    0 8px 32px 0 rgba(31, 38, 135, 0.1),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+
+  --input-bg: rgba(255, 255, 255, 0.6);
+  --input-text: #020617;
+  --input-border: rgba(0, 0, 0, 0.1);
+  --input-placeholder: #94a3b8;
+
+  /* Ambient Background (Liquid/MacOS style) */
+  --bg-gradient:
+    radial-gradient(at 0% 0%, rgba(255, 255, 255, 1) 0%, transparent 50%),
+    radial-gradient(at 50% 0%, rgba(249, 115, 22, 0.15), transparent 50%),
+    /* Orange tint */
+    radial-gradient(at 100% 100%, rgba(255, 247, 237, 1) 0%, transparent 50%);
+
+  /* Accent Colors (Professional Orange for Liquid Mode) */
+  --accent-primary: #f97316;
+  /* orange-500 */
+  --accent-secondary: #ea580c;
+  /* orange-600 */
+  --accent-gradient: linear-gradient(to right, #f97316, #ea580c);
+  --accent-glow: rgba(249, 115, 22, 0.4);
+
+  /* ========================================
+     DEPTH SYSTEM - Prevents "Black Hole" Effects
+     ======================================== */
+
+  /* Layer 0: Background (Wallpaper) */
+  --layer-0-bg: transparent;
+  /* Wallpaper shows through */
+
+  /* Layer 1: Main Card (Primary Glass Surface) */
+  --layer-1-bg: rgba(255, 255, 255, 0.6);
+  /* 60% opacity - Main cards */
+  --layer-1-border: rgba(255, 255, 255, 0.5);
+  --layer-1-blur: blur(20px);
+
+  /* Layer 2: Inner Card (Lighter/More Transparent) */
+  --layer-2-bg: rgba(255, 255, 255, 0.4);
+  /* 40% opacity - Inner sections */
+  --layer-2-border: rgba(255, 255, 255, 0.3);
+  --layer-2-blur: blur(16px);
+
+  /* Layer 3: Modal/Floating (Distinct but Translucent) */
+  --layer-3-bg: rgba(255, 255, 255, 0.5);
+  /* 50% opacity - Modals (reduced from 70% to prevent grey slab) */
+  --layer-3-border: rgba(255, 255, 255, 0.6);
+  --layer-3-blur: blur(24px);
+
+  /* Layer 4: Overlay/Backdrop */
+  --layer-4-bg: rgba(0, 0, 0, 0.5);
+  /* Dark backdrop for modals */
+  --layer-4-blur: blur(8px);
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background-color: var(--bg-primary);
+  background-image: var(--bg-gradient);
+  background-attachment: fixed;
+  color: var(--text-primary);
+  transition: background 0.5s ease, color 0.3s ease;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@layer components {
+
+  /* The core Liquid Glass Effect */
+  .glass-panel {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    transition: all 0.3s ease;
+  }
+
+  .glass-button {
+    background-image: var(--accent-gradient);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 6px -1px var(--accent-glow);
+    @apply px-4 py-2 rounded-xl transition-all duration-300 text-white font-bold tracking-wide hover:brightness-110 active:scale-95;
+  }
+
+  .glass-button:hover {
+    box-shadow: 0 0 20px var(--accent-glow);
+  }
+
+  /* Theme-aware Text Colors */
+  .text-theme-primary {
+    color: var(--text-primary);
+  }
+
+  .text-theme-secondary {
+    color: var(--text-secondary);
+  }
+
+  .glass-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
+    border-radius: 0.75rem;
+    color: var(--input-text);
+    transition: all 0.3s ease;
+  }
+
+  .glass-input::placeholder {
+    color: var(--input-placeholder);
+  }
+
+  .glass-input:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+    background: rgba(255, 255, 255, 0.8);
+    /* Lighter on focus in light mode */
+    box-shadow: 0 0 0 2px var(--accent-glow);
+  }
+
+
+  /* ========================================
+     SEMANTIC DESIGN TOKENS (Source of Truth)
+     ======================================== */
+
+  /* Surface Tokens - Glass Effects */
+  .surface-glass {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    border-radius: 1rem;
+    /* 16px */
+    transition: all 0.3s ease;
+  }
+
+  .surface-glass-panel {
+    @apply surface-glass p-6;
+  }
+
+  .surface-glass-card {
+    @apply surface-glass p-4 rounded-xl;
+  }
+
+  /* Typography Tokens - Theme-Aware Text */
+  .text-heading {
+    @apply text-theme-primary font-bold;
+  }
+
+  .text-heading-xl {
+    @apply text-heading text-3xl;
+  }
+
+  .text-heading-lg {
+    @apply text-heading text-2xl;
+  }
+
+  .text-heading-md {
+    @apply text-heading text-xl;
+  }
+
+  .text-body {
+    @apply text-theme-secondary;
+  }
+
+  .text-body-sm {
+    @apply text-body text-sm;
+  }
+
+  /* Theme-Aware Muted Text (for descriptions, labels, etc.) */
+  .text-muted {
+    color: var(--text-secondary);
+  }
+
+  /* Theme-Aware Faint Text (even lighter, for hints) */
+  .text-faint {
+    @apply text-theme-secondary opacity-70;
+  }
+
+  /* Layout Tokens - Standard Spacing */
+  .page-spacing {
+    @apply space-y-6;
+  }
+
+  .section-spacing {
+    @apply space-y-4;
+  }
+
+  /* ========================================
+     SEMANTIC SURFACE TOKENS
+     ======================================== */
+
+  /* Main Card Surface (Layer 1) */
+  .surface-card {
+    background: var(--layer-1-bg);
+    backdrop-filter: var(--layer-1-blur);
+    -webkit-backdrop-filter: var(--layer-1-blur);
+    border: 1px solid var(--layer-1-border);
+    box-shadow: var(--glass-shadow);
+    border-radius: 1rem;
+    transition: all 0.3s ease;
+  }
+
+  /* Inner Container Surface (Layer 2) */
+  .surface-inner {
+    background: var(--layer-2-bg);
+    backdrop-filter: var(--layer-2-blur);
+    -webkit-backdrop-filter: var(--layer-2-blur);
+    border: 1px solid var(--layer-2-border);
+    border-radius: 0.75rem;
+    transition: all 0.3s ease;
+  }
+
+  /* Modal/Floating Surface (Layer 3) */
+  .surface-modal {
+    background: var(--layer-3-bg);
+    backdrop-filter: var(--layer-3-blur);
+    -webkit-backdrop-filter: var(--layer-3-blur);
+    border: 1px solid var(--layer-3-border);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+    border-radius: 1.5rem;
+    transition: all 0.3s ease;
+  }
+
+  /* Backdrop Overlay (Layer 4) */
+  .surface-backdrop {
+    background: var(--layer-4-bg);
+    backdrop-filter: var(--layer-4-blur);
+    -webkit-backdrop-filter: var(--layer-4-blur);
+  }
+
+  /* Empty State Container */
+  .surface-empty-state {
+    @apply surface-card p-16 flex flex-col items-center justify-center text-center;
+  }
+
+  /* Icon Container (Semantic) */
+  .surface-icon-container {
+    @apply surface-inner p-3 rounded-xl flex items-center justify-center;
+  }
+
+  /* Badge Container */
+  .surface-badge {
+    background: var(--layer-2-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--layer-2-border);
+    @apply px-2 py-1 rounded-lg text-xs font-bold;
+  }
+
+  /* Input Field (Semantic) */
+  .surface-input {
+    background: var(--layer-2-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--layer-2-border);
+    @apply px-4 py-2 rounded-xl text-theme-primary;
+    transition: all 0.3s ease;
+  }
+
+  .surface-input:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+    background: rgba(255, 255, 255, 0.5);
+    box-shadow: 0 0 0 2px var(--accent-glow);
+  }
+
+  /* Button Variants */
+  .surface-button-secondary {
+    @apply surface-inner px-4 py-2 rounded-xl font-bold text-theme-primary;
+    transition: all 0.3s ease;
+  }
+
+  .surface-button-secondary:hover {
+    background: rgba(255, 255, 255, 0.5);
+    transform: translateY(-1px);
+  }
+
+  /* ========================================
+     SEMANTIC STATUS TOKENS
+     Translucent status indicators that maintain
+     the Liquid Glass aesthetic
+     ======================================== */
+
+  /* Success Status (Active, Online, Approved) */
+  .bg-status-success {
+    background: rgba(34, 197, 94, 0.1);
+    /* green-500/10 */
+    color: rgb(34, 197, 94);
+    /* green-500 */
+    border: 1px solid rgba(34, 197, 94, 0.2);
+    @apply px-2 py-1 rounded text-xs font-bold uppercase tracking-widest;
+  }
+
+  /* Error Status (Failed, Rejected, Offline) */
+  .bg-status-error {
+    background: rgba(239, 68, 68, 0.1);
+    /* red-500/10 */
+    color: rgb(239, 68, 68);
+    /* red-500 */
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    @apply px-2 py-1 rounded text-xs font-bold uppercase tracking-widest;
+  }
+
+  /* Warning Status (Pending, Attention Required) */
+  .bg-status-warning {
+    background: rgba(234, 179, 8, 0.1);
+    /* yellow-500/10 */
+    color: rgb(234, 179, 8);
+    /* yellow-500 */
+    border: 1px solid rgba(234, 179, 8, 0.2);
+    @apply px-2 py-1 rounded text-xs font-bold uppercase tracking-widest;
+  }
+
+  /* Info Status (In Progress, Processing) */
+  .bg-status-info {
+    background: rgba(59, 130, 246, 0.1);
+    /* blue-500/10 */
+    color: rgb(59, 130, 246);
+    /* blue-500 */
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    @apply px-2 py-1 rounded text-xs font-bold uppercase tracking-widest;
+  }
+
+  /* Neutral Status (Inactive, Closed, Disabled) */
+  .bg-status-neutral {
+    background: rgba(107, 114, 128, 0.1);
+    /* gray-500/10 */
+    color: rgb(107, 114, 128);
+    /* gray-500 */
+    border: 1px solid rgba(107, 114, 128, 0.2);
+    @apply px-2 py-1 rounded text-xs font-bold uppercase tracking-widest;
+  }
+
+
+  /* Custom scrollbar for deep dark theme */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-white/10 rounded-full hover:bg-amber-500/50 transition-colors;
+  }
+}

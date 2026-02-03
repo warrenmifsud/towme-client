@@ -1,0 +1,77 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  /* Premium macOS-style Depth & Vibrancy */
+  background: radial-gradient(circle at center, #1a1a1a 0%, #050505 100%);
+  background-attachment: fixed;
+  color: #f8fafc;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #0a0a0a;
+  /* Fallback */
+}
+
+@layer components {
+
+  /* Premium Liquid Glass Effect */
+  /* macOS ultraThinMaterial Effect */
+  .glass-panel {
+    @apply bg-white/[0.02] backdrop-blur-[64px] border border-white/10 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] rounded-[40px] transition-all duration-500 overflow-hidden;
+    position: relative;
+  }
+
+  .glass-panel::before {
+    content: '';
+    @apply absolute inset-0 bg-gradient-to-b from-white/[0.05] to-transparent pointer-events-none;
+  }
+
+  .glass-panel-gold {
+    @apply bg-amber-500/[0.03] backdrop-blur-[64px] border border-amber-500/20 shadow-gold-glow rounded-[40px] transition-all duration-500;
+  }
+
+  .glass-button {
+    @apply px-6 py-3 rounded-2xl bg-glass-200 hover:bg-glass-300 border border-glass-border transition-all duration-500 backdrop-blur-md text-white font-bold hover:shadow-glass hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2;
+  }
+
+  .glass-button-gold {
+    @apply px-6 py-3 rounded-2xl bg-amber-500 hover:bg-amber-600 border border-amber-400/20 text-black font-black transition-all duration-500 shadow-gold-glow hover:shadow-amber-500/40 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2;
+  }
+
+  .glass-input {
+    @apply w-full px-6 py-5 bg-white/[0.03] border border-white/5 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-amber-500/30 focus:bg-white/[0.05] transition-all duration-500 shadow-inner;
+  }
+
+  /* Ferrari speed shimmer effect */
+  .shimmer {
+    @apply relative overflow-hidden before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_2s_infinite] before:bg-gradient-to-r before:from-transparent before:via-white/10 before:to-transparent;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(212, 175, 55, 0.2);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(212, 175, 55, 0.4);
+}
