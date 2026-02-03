@@ -819,7 +819,7 @@ export default function ServiceCategories() {
             {/* Schedule Pricing Modal */}
             {showScheduleModal && (
                 <div className="fixed inset-0 bg-white/5 backdrop-blur-sm flex items-center justify-center z-50">
-                    <div className="surface-modal w-full max-w-lg p-8 animate-in fade-in zoom-in duration-200 max-h-[90vh] overflow-y-auto">
+                    <div className="glass-panel border border-white/40 shadow-2xl w-full max-w-lg p-8 animate-in fade-in zoom-in duration-200 max-h-[90vh] overflow-y-auto">
                         <h3 className="text-xl font-bold text-theme-primary mb-2">Schedule Price Change</h3>
                         <p className="text-sm text-gray-400 mb-6">Automatically adjust prices for selected services during a date range.</p>
 
