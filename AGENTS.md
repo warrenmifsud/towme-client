@@ -54,5 +54,11 @@ All visual elements must adhere to the following color palette. **NO GRADIENTS**
 *   **Visual Consistency**: Daily audit required. `#F9A825` Profile Border must not be altered.
 *   **Status**: **PASSIVE SENTINEL**. Agents are watching.
 
-## 8. Status
+## 9. Custom Domain & Project Ref Lock (Protocol 173)
+*   **Custom Domain**: `auth.towme.net` ACTIVE.
+*   **Project Ref**: Context is derived directly from the Custom Domain mapping. No `x-client-info` headers required in code.
+*   **GoTrue**: `GOTRUE_EXTERNAL_OTR_ENABLED` must be TRUE (Supabase Dashboard).
+*   **Status**: Project Mismatch **PERMANENTLY RESOLVED**.
+
+## 10. Status
 **ACTIVE & MONITORED**. Agents are in passive monitoring mode.
