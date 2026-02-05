@@ -42,10 +42,17 @@ All visual elements must adhere to the following color palette. **NO GRADIENTS**
 *   **Theme Strictness**: Any CSS/Theme PR deviating from `#F9A825` / `#1A1C2E` must be REJECTED.
 
 ## 7. Project ID Governance (Protocol 162/169)
-*   **Production Project**: `Mifsud Towing` (Google Cloud).
+*   **Permanent Project Home**: `Mifsud Towing` (Google Cloud).
 *   **Production Client ID**: `542619959192-1kbd9jv3v7057p0ovso7ulv26rmb30b2.apps.googleusercontent.com`.
+*   **Sandbox Project**: `gen-lang-client-0535319900` -> **RETIRED/RESTRICTED**. Do not use.
 *   **Redirect Authorization**: `https://auth.towme.net/auth/v1/callback` MUST be enabled in Google Console.
 *   **Status**: 400 Error **PERMANENTLY RESOLVED**. Project Transition Verified.
+
+## 8. Sentinel Mode Protocols (Phase 171)
+*   **Monitor Handshake**: Verify all production logins use the Mifsud Towing Client ID.
+*   **Regression Guard**: Any manual change to Netlify Env variables that contradicts `netlify.toml` is a breach of protocol.
+*   **Visual Consistency**: Daily audit required. `#F9A825` Profile Border must not be altered.
+*   **Status**: **PASSIVE SENTINEL**. Agents are watching.
 
 ## 8. Status
 **ACTIVE & MONITORED**. Agents are in passive monitoring mode.
