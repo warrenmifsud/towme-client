@@ -43,6 +43,7 @@ All visual elements must adhere to the following color palette. **NO GRADIENTS**
 
 ## 7. Project ID Governance (Protocol 162/169)
 *   **Permanent Project Home**: `Mifsud Towing` (Google Cloud).
+*   **Supabase Project Ref**: `letjcjqppyxzqfthdqul` (Context Locked via CNAME).
 *   **Production Client ID**: `542619959192-1kbd9jv3v7057p0ovso7ulv26rmb30b2.apps.googleusercontent.com`.
 *   **Sandbox Project**: `gen-lang-client-0535319900` -> **RETIRED/RESTRICTED**. Do not use.
 *   **Redirect Authorization**: `https://auth.towme.net/auth/v1/callback` MUST be enabled in Google Console.
