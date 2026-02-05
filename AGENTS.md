@@ -57,7 +57,8 @@ All visual elements must adhere to the following color palette. **NO GRADIENTS**
 
 ## 9. Custom Domain & Project Ref Lock (Protocol 173)
 *   **Custom Domain**: `auth.towme.net` ACTIVE.
-*   **Project Ref**: Context is derived directly from the Custom Domain mapping. No `x-client-info` headers required in code.
+*   **Project Ref**: `letjcjqppyxzqfthdqul`.
+*   **Code Standard**: `src/lib/supabase.ts` MUST include `x-project-ref` header globally.
 *   **GoTrue**: `GOTRUE_EXTERNAL_OTR_ENABLED` must be TRUE (Supabase Dashboard).
 *   **Status**: Project Mismatch **PERMANENTLY RESOLVED**.
 
