@@ -1,17 +1,18 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { ArrowLeft, ChevronRight, LogOut, MapPin, X, Crosshair, Loader, Loader2, Clock } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { ArrowLeft, LogOut, MapPin, X, Crosshair, Loader, Loader2, Clock } from 'lucide-react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { getIcon } from '../lib/serviceIcons';
 import { useAuth } from '../contexts/AuthContext';
 import { useProgressiveLocation } from '../hooks/useProgressiveLocation';
 import VehicleManager from '../components/VehicleManager';
-import ProfessionalsTab from '../components/ProfessionalsTab';
 import { APIProvider, Map, AdvancedMarker, useMap, useMapsLibrary } from '@vis.gl/react-google-maps';
 import PlaceAutocomplete from '../components/PlaceAutocomplete';
 import MapControl from '../components/MapControl';
 import { PaymentModal } from '../components/PaymentModal';
+import TripHeader from '../components/TripHeader';
+import { THEME } from '../theme';
 
 interface Category {
     id: string;
@@ -57,11 +58,19 @@ function calculateArrivalTime(durationText: string): string {
     return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
 }
 
-export default function ServiceSelection() {
+interface ServiceSelectionProps {
+    destination?: google.maps.places.PlaceResult | null;
+    categoryFilter?: string;
+    onBack?: () => void;
+    pickupAddress?: string;
+}
+
+export default function ServiceSelection({ destination: propDestination, onBack, pickupAddress: propPickupAddress }: ServiceSelectionProps = {}) {
     const { signOut, user } = useAuth();
     const navigate = useNavigate();
     const [selectedService, setSelectedService] = useState<string | null>(null);
     const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
+    const location = useLocation();
 
     // Progressive Location Hook (Instant Load)
     const { location: userGpsLocation, isLoading: locating, error: geoError, refetch: refetchLocation } = useProgressiveLocation();
@@ -116,6 +125,15 @@ export default function ServiceSelection() {
     const [showDestinationModal, setShowDestinationModal] = useState(false);
     const [destination, setDestination] = useState<google.maps.places.PlaceResult | null>(null);
     const [submitting, setSubmitting] = useState(false);
+
+    // Auto-set state from Home.tsx navigation OR Props
+    useEffect(() => {
+        if (propDestination) {
+            setDestination(propDestination);
+        } else if (location.state?.destination) {
+            setDestination(location.state.destination);
+        }
+    }, [location.state, propDestination]);
     const [routeInfo, setRouteInfo] = useState<{ distance: string; duration: string } | null>(null);
 
     // Payment State
@@ -162,8 +180,8 @@ export default function ServiceSelection() {
         return R * c;
     };
 
-    // TanStack Query: Service Categories (Cached for Instant Load)
-    const { data: categories = [], isLoading: loading } = useQuery({
+    // TanStack Query: Service Categories
+    const { data: categories = [] } = useQuery({
         queryKey: ['service-categories'],
         queryFn: async () => {
             const { data, error } = await supabase
@@ -379,8 +397,8 @@ export default function ServiceSelection() {
         <APIProvider apiKey={GOOGLE_MAPS_API_KEY} libraries={['places', 'marker', 'routes', 'geometry']}>
             <div className="h-[100dvh] w-full relative bg-slate-950 text-white font-sans overflow-hidden flex flex-col">
 
-                {/* --- TOP SECTION: MAP (55% Height) --- */}
-                <div className="h-[55%] w-full relative z-0 group">
+                {/* --- FULL SCREEN MAP (Z-0) --- */}
+                <div className="absolute inset-0 z-0">
                     {GOOGLE_MAPS_API_KEY ? (
                         <>
                             <Map
@@ -428,7 +446,10 @@ export default function ServiceSelection() {
                                         <AdvancedMarker position={pickupLocation}>
                                             <div className="relative flex flex-col items-center">
                                                 {/* Time Bubble */}
-                                                <div className="bg-[#108c44] text-white px-3 py-1.5 rounded-full shadow-lg flex flex-col items-center justify-center min-w-[60px] min-h-[60px] border-[3px] border-white relative overflow-hidden">
+                                                <div
+                                                    className="text-white px-3 py-1.5 rounded-full shadow-lg flex flex-col items-center justify-center min-w-[60px] min-h-[60px] border-[3px] border-white relative overflow-hidden"
+                                                    style={{ backgroundColor: THEME.colors.primaryBrandColor }}
+                                                >
                                                     {isCalculatingEta && (
                                                         <div className="absolute inset-0 bg-white/10 animate-pulse pointer-events-none" />
                                                     )}
@@ -438,9 +459,9 @@ export default function ServiceSelection() {
                                                     <span className="text-[10px] font-medium leading-none mt-0.5">min</span>
                                                 </div>
                                                 {/* Stem/Stick */}
-                                                <div className="w-1 h-4 bg-[#108c44]"></div>
+                                                <div className="w-1 h-4" style={{ backgroundColor: THEME.colors.primaryBrandColor }}></div>
                                                 {/* Base Dot */}
-                                                <div className="w-4 h-4 rounded-full bg-white border-[4px] border-[#108c44] shadow-sm"></div>
+                                                <div className="w-4 h-4 rounded-full bg-white border-[4px] shadow-sm" style={{ borderColor: THEME.colors.primaryBrandColor }}></div>
                                             </div>
                                         </AdvancedMarker>
 
@@ -476,7 +497,10 @@ export default function ServiceSelection() {
                                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[calc(100%+8px)] z-10 pointer-events-none">
                                     <div className="relative flex flex-col items-center group">
                                         {/* Time Bubble */}
-                                        <div className="bg-[#108c44] text-white px-3 py-1.5 rounded-full shadow-lg flex flex-col items-center justify-center min-w-[60px] min-h-[60px] border-[3px] border-white transition-transform duration-200 group-hover:-translate-y-1 relative overflow-hidden">
+                                        <div
+                                            className="text-white px-3 py-1.5 rounded-full shadow-lg flex flex-col items-center justify-center min-w-[60px] min-h-[60px] border-[3px] border-white transition-transform duration-200 group-hover:-translate-y-1 relative overflow-hidden"
+                                            style={{ backgroundColor: THEME.colors.primaryBrandColor }}
+                                        >
                                             {isCalculatingEta && (
                                                 <div className="absolute inset-0 bg-white/10 animate-pulse pointer-events-none" />
                                             )}
@@ -486,9 +510,9 @@ export default function ServiceSelection() {
                                             <span className="text-[10px] font-medium leading-none mt-0.5">min</span>
                                         </div>
                                         {/* Stem/Stick */}
-                                        <div className="w-1 h-4 bg-[#108c44]"></div>
+                                        <div className="w-1 h-4" style={{ backgroundColor: THEME.colors.primaryBrandColor }}></div>
                                         {/* Base Dot */}
-                                        <div className="w-4 h-4 rounded-full bg-white border-[4px] border-[#108c44] shadow-sm"></div>
+                                        <div className="w-4 h-4 rounded-full bg-white border-[4px] shadow-sm" style={{ borderColor: THEME.colors.primaryBrandColor }}></div>
                                     </div>
                                 </div>
                             )}
@@ -502,18 +526,53 @@ export default function ServiceSelection() {
                         </div>
                     )}
 
-                    {/* Navbar (Overlaid on Map) */}
-                    <div className="absolute top-0 left-0 w-full p-6 z-20 flex items-center justify-between pointer-events-none">
-                        <Link to="/" className="p-4 rounded-2xl glass-button border-white/5 pointer-events-auto hover:bg-white/10 transition-colors">
-                            <ArrowLeft className="w-5 h-5 text-amber-500" />
-                        </Link>
-                        <div className="flex-1 px-4 text-center">
-                            <h1 className="text-xs font-black tracking-[0.3em] uppercase text-white/40 shadow-sm">Pickup Location</h1>
+                    {/* HEADER: TRIP SUMMARY vs LEGACY NAV */}
+                    {destination ? (
+                        <TripHeader
+                            pickup={propPickupAddress || pickupAddress || "Current Location"}
+                            destination={(function () {
+                                // CLEAN BUILD: Manual Address Construction
+                                const place = destination;
+                                if (!place) return "Destination";
+
+                                // 1. Extract raw components
+                                const components = place.address_components || [];
+                                const getComponent = (type: string) => components.find(c => c.types.includes(type))?.long_name || '';
+
+                                const streetNum = getComponent('street_number');
+                                const route = getComponent('route'); // This is the Street Name
+                                const city = getComponent('locality') || getComponent('administrative_area_level_1');
+
+                                // 2. Build the string manually
+                                if (route) {
+                                    // Result: "12 Triq Il-Kwartin, Swieqi"
+                                    const part1 = streetNum ? `${streetNum} ${route}` : route;
+                                    return city ? `${part1}, ${city}` : part1;
+                                }
+
+                                // 3. Fallback: Strip the code using Regex from formatted_address
+                                const raw = place.formatted_address || place.name || '';
+                                return raw.replace(/^[A-Z0-9]+\+[A-Z0-9]+\s*,?\s*/, '');
+                            })()}
+                            onClose={() => onBack ? onBack() : navigate('/')}
+                        />
+                    ) : (
+                        /* Legacy Navbar (Overlaid on Map) */
+                        <div
+                            className="absolute top-0 left-0 w-full p-4 z-20 flex items-center justify-between pointer-events-auto shadow-md"
+                            style={{ backgroundColor: THEME.colors.brandNavy }}
+                        >
+                            <Link to="/" className="p-2 rounded-xl bg-white/10 hover:bg-white/20 transition-colors text-white">
+                                <ArrowLeft className="w-5 h-5" />
+                            </Link>
+                            <div className="flex-1 px-4 text-center">
+                                <h1 className="text-xs font-black tracking-[0.3em] uppercase text-white shadow-sm">Pickup Location</h1>
+                            </div>
+                            <button onClick={handleSignOut} className="p-2 rounded-xl bg-white/10 hover:bg-red-500/20 text-white/50 hover:text-red-500 transition-colors">
+                                <LogOut className="w-4 h-4" />
+                            </button>
                         </div>
-                        <button onClick={handleSignOut} className="p-4 rounded-2xl glass-button border-white/5 text-red-500/50 hover:text-red-500 pointer-events-auto transition-colors">
-                            <LogOut className="w-4 h-4" />
-                        </button>
-                    </div>
+                    )}
 
                     {/* Locate Button (Moved to float on map) */}
                     <button
@@ -521,140 +580,138 @@ export default function ServiceSelection() {
                         className={`
                             absolute bottom-6 right-6 z-20 w-12 h-12 glass-panel rounded-full flex items-center justify-center 
                             transition-all active:scale-95 shadow-lg border border-white/10 bg-black/80 backdrop-blur-md
-                            ${locating ? 'text-amber-500 animate-pulse' : 'text-amber-500 hover:text-white'}
+                            ${locating ? 'animate-pulse' : 'hover:text-white'}
                             ${geoError ? 'border-red-500 text-red-500' : ''}
                         `}
+                        style={{ color: THEME.colors.primaryBrandColor }}
                     >
                         {locating ? <Loader size={24} className="animate-spin" /> : <Crosshair size={24} />}
                     </button>
                 </div>
 
-                {/* --- BOTTOM SECTION: CONTENT PANEL (45% Height) --- */}
-                <div className="h-[45%] w-full bg-slate-900/60 backdrop-blur-3xl rounded-t-[32px] shadow-[0_-10px_40px_rgba(0,0,0,0.25)] flex flex-col relative z-20 -mt-6 border-t border-white/15">
+                {/* --- UBER-STYLE SERVICE SELECTOR (Z-20, SLIDE UP) --- */}
+                {/* --- LIGHT THEME SERVICE SELECTOR (Fixed Visibility) --- */}
+                {destination && (
+                    <div className="absolute bottom-0 left-0 right-0 z-50 h-[45%] flex flex-col pointer-events-none">
 
-                    {/* TABS HEADER */}
-                    <div className="flex items-center justify-center p-2 border-b border-white/5 mt-2">
-                        <div className="flex bg-black/20 rounded-xl p-1 w-full max-w-xs backdrop-blur-md">
-                            <button
-                                onClick={() => setActiveTab('services')}
-                                className={`flex-1 py-2.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all
-                                    ${activeTab === 'services' ? 'bg-white/10 text-white shadow-glass border border-white/10' : 'text-slate-400 hover:text-white'}
-                                `}
-                            >
-                                Services
-                            </button>
-                            <button
-                                onClick={() => setActiveTab('vehicles')}
-                                className={`flex-1 py-2.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all
-                                    ${activeTab === 'vehicles' ? 'bg-white/10 text-white shadow-glass border border-white/10' : 'text-slate-400 hover:text-white'}
-                                `}
-                            >
-                                My Vehicles
-                            </button>
-                            <button
-                                onClick={() => setActiveTab('professionals')}
-                                className={`flex-1 py-2.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all
-                                    ${activeTab === 'professionals' ? 'bg-white/10 text-white shadow-glass border border-white/10' : 'text-slate-400 hover:text-white'}
-                                `}
-                            >
-                                Pros
-                            </button>
-                        </div>
-                    </div>
+                        {/* "GLASS" LIGHT SHEET */}
+                        <div className="bg-white rounded-t-[25px] p-5 pb-10 shadow-[0_-5px_20px_rgba(0,0,0,0.1)] border-t border-slate-100 h-full flex flex-col pointer-events-auto">
 
-                    {/* CONTENT AREA */}
-                    <div className="flex-1 overflow-hidden relative">
+                            {/* Handle Bar */}
+                            <div className="w-10 h-1 bg-[#E0E0E0] rounded-full mx-auto mb-4" />
 
-                        {/* SERVICE SELECTION TAB */}
-                        <div className={`absolute inset-0 p-6 pt-4 flex flex-col transition-opacity duration-300 ${activeTab === 'services' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
-                            {loading ? (
-                                <div className="space-y-4">
-                                    {[1, 2, 3].map(i => <div key={i} className="h-20 bg-white/5 rounded-2xl animate-shimmer" />)}
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest">
+                                    Choose Service Level
+                                </h3>
+                                {/* Trip Stats */}
+                                <div className="flex flex-col items-end">
+                                    {routeInfo && (
+                                        <>
+                                            <span className="text-xs font-bold text-slate-900">{routeInfo.duration}</span>
+                                            <span className="text-[10px] text-slate-400">{routeInfo.distance}</span>
+                                        </>
+                                    )}
                                 </div>
-                            ) : (
-                                <div className="flex-1 overflow-y-auto pr-1 space-y-3 pb-20 scrollbar-hide">
-                                    {categories.map((service) => {
-                                        const Icon = getIcon(service.icon_name);
-                                        const isSelected = selectedService === service.id;
-                                        return (
-                                            <div
-                                                key={service.id}
-                                                onClick={() => setSelectedService(service.id)}
-                                                className={`
-                                                    relative p-4 rounded-2xl border cursor-pointer transition-all duration-200 flex items-center
-                                                    ${isSelected
-                                                        ? 'bg-amber-500/20 border-amber-500/50 shadow-[0_0_20px_rgba(245,158,11,0.2)]'
-                                                        : 'bg-white/5 border-white/10 hover:bg-white/10'
-                                                    }
-                                                `}
-                                            >
-                                                <div className={`
-                                                    w-32 h-20 rounded-xl flex items-center justify-center mr-4 shrink-0 backdrop-blur-sm overflow-hidden
-                                                    ${isSelected ? 'bg-white/5 text-amber-500' : 'bg-white/5 text-slate-300'}
-                                                `}>
-                                                    <Icon className="w-full h-full object-contain" />
+                            </div>
+
+                            {/* SCROLLABLE SERVICE LIST (Prevent Overflow) */}
+                            <div className="flex-1 overflow-y-auto space-y-2 mb-4 scrollbar-hide">
+                                {categories.map((service) => {
+                                    const Icon = getIcon(service.icon_name);
+                                    const isSelected = selectedService === service.id;
+
+                                    return (
+                                        <button
+                                            key={service.id}
+                                            onClick={() => setSelectedService(service.id)}
+                                            className={`
+                                                w-full flex items-center p-3 rounded-xl border transition-all duration-200 active:scale-[0.98]
+                                                ${isSelected
+                                                    ? 'bg-[#FFF5EB]'
+                                                    : 'bg-[#F9F9F9] border-transparent hover:border-slate-200'
+                                                }
+                                            `}
+                                            style={isSelected ? { borderColor: THEME.colors.primaryBrandColor } : {}}
+                                        >
+                                            {/* Icon */}
+                                            <div className="w-10 flex items-center justify-center">
+                                                <Icon className="w-6 h-6" style={{ color: isSelected ? THEME.colors.primaryBrandColor : THEME.colors.labelText }} />
+                                            </div>
+
+                                            {/* Text Info */}
+                                            <div className="flex-1 px-3 text-left">
+                                                <div className="text-base font-bold text-slate-900 leading-tight">
+                                                    {service.name}
                                                 </div>
-                                                <div className="flex-1 min-w-0">
-                                                    <h3 className={`font-bold text-sm truncate ${isSelected ? 'text-white' : 'text-slate-200'}`}>{service.name}</h3>
-                                                    <p className="text-[10px] text-slate-400 truncate">{service.description}</p>
-                                                </div>
-                                                <div className="text-right pl-2">
-                                                    <span className={`block font-black text-lg ${isSelected ? 'text-amber-500' : 'text-slate-300'}`}>€{service.base_price}</span>
+                                                <div className="text-xs text-slate-500 mt-0.5">
+                                                    {service.description}
                                                 </div>
                                             </div>
-                                        );
-                                    })}
-                                </div>
-                            )}
 
-                            {/* Sticky Action Button */}
-                            <div className="absolute bottom-6 left-6 right-6">
-                                <button
-                                    disabled={!selectedService}
-                                    onClick={() => {
-                                        if (!selectedVehicleId) {
-                                            setActiveTab('vehicles');
-                                        } else {
-                                            handleInitialSelect();
-                                        }
-                                    }}
-                                    className={`
-                                        w-full h-14 rounded-xl font-black text-sm uppercase tracking-wider flex items-center justify-center transition-all shadow-lg
-                                        ${selectedService
-                                            ? 'bg-amber-500 text-black hover:scale-[1.02]'
-                                            : 'bg-slate-800 text-slate-600 cursor-not-allowed'
-                                        }
-                                    `}
-                                >
-                                    {!selectedVehicleId ? 'Select Vehicle Next' : 'Request Towing'}
-                                    <ChevronRight className="ml-2 w-4 h-4" />
-                                </button>
+                                            {/* Price */}
+                                            <div className="text-right">
+                                                <div className="text-base font-bold text-slate-900">€{service.base_price}</div>
+                                            </div>
+                                        </button>
+                                    );
+                                })}
                             </div>
-                        </div>
 
-                        {/* VEHICLES TAB */}
-                        <div className={`absolute inset-0 p-6 pt-4 overflow-y-auto transition-opacity duration-300 ${activeTab === 'vehicles' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
-                            <VehicleManager onSelect={setSelectedVehicleId} selectedId={selectedVehicleId} />
+                            {/* CONFIRM BUTTON */}
+                            <button
+                                disabled={!selectedService}
+                                onClick={() => {
+                                    if (!selectedVehicleId) {
+                                        setActiveTab('vehicles');
+                                    } else {
+                                        handleInitialSelect();
+                                        console.log('Booking Confirmed for Service:', selectedService);
+                                    }
+                                }}
+                                className={`
+                                    w-full py-4 rounded-xl font-black text-lg uppercase tracking-wider flex items-center justify-center transition-all shadow-md active:scale-[0.98]
+                                    ${selectedService
+                                        ? 'text-white shadow-orange-500/30 hover:opacity-95'
+                                        : 'bg-slate-100 text-slate-300 cursor-not-allowed shadow-none'
+                                    }
+                                `}
+                                style={selectedService ? {
+                                    backgroundColor: THEME.colors.primaryBrandColor
+                                } : {}}
+                            >
+                                {selectedVehicleId ? 'CONFIRM TOW' : 'Select Vehicle'}
+                            </button>
 
-                            {selectedVehicleId && (
-                                <div className="mt-8">
-                                    <button
-                                        onClick={() => setActiveTab('services')}
-                                        className="w-full py-4 text-xs font-bold text-amber-500 uppercase tracking-widest hover:text-white"
-                                    >
-                                        Back to Services
-                                    </button>
+                            {/* Legacy Vehicles Tab (Hidden/Overlaid if active) */}
+                            {activeTab === 'vehicles' && (
+                                <div className="absolute inset-0 bg-white p-5 pb-10 z-30 flex flex-col rounded-t-[25px]">
+                                    <div className="flex items-center justify-between mb-6">
+                                        <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Select Vehicle</h3>
+                                        <button onClick={() => setActiveTab('services')} className="p-2 bg-slate-100 rounded-full">
+                                            <X className="w-4 h-4 text-slate-600" />
+                                        </button>
+                                    </div>
+                                    <div className="flex-1 overflow-y-auto -mx-5 px-5">
+                                        <VehicleManager onSelect={setSelectedVehicleId} selectedId={selectedVehicleId} />
+                                    </div>
+                                    {selectedVehicleId && (
+                                        <button
+                                            onClick={() => setActiveTab('services')}
+                                            className="w-full mt-4 py-4 rounded-xl text-white font-black uppercase tracking-wider shadow-md hover:opacity-95 transition-opacity"
+                                            style={{
+                                                backgroundColor: THEME.colors.primaryBrandColor
+                                            }}
+                                        >
+                                            Confirm Vehicle
+                                        </button>
+                                    )}
                                 </div>
                             )}
-                        </div>
 
-                        {/* PROFESSIONALS TAB */}
-                        <div className={`absolute inset-0 pb-0 overflow-hidden transition-opacity duration-300 ${activeTab === 'professionals' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}>
-                            <ProfessionalsTab location={pickupLocation} />
                         </div>
-
                     </div>
-                </div>
+                )}
 
                 {/* Overlays (Error, Permissions, Destination Modal) */}
                 {geoError && (
@@ -680,14 +737,22 @@ export default function ServiceSelection() {
                             onClick={() => setShowDestinationModal(false)}
                         />
 
-                        <div className="w-full sm:max-w-lg mx-auto bg-slate-900/95 backdrop-blur-xl p-6 rounded-t-[32px] sm:rounded-3xl border-t sm:border border-white/15 shadow-2xl relative pointer-events-auto animate-slide-up sm:animate-fade-in group pb-10 sm:pb-6 max-h-[40vh] overflow-y-auto">
+                        <div className="w-full sm:max-w-lg mx-auto bg-white p-6 rounded-t-[32px] sm:rounded-3xl border-t sm:border border-slate-100 shadow-2xl relative pointer-events-auto animate-slide-up sm:animate-fade-in group pb-10 sm:pb-6 max-h-[40vh] overflow-y-auto">
 
                             {/* Drag Handle (Mobile) */}
-                            <div className="w-12 h-1 bg-white/20 rounded-full mx-auto mb-6 sm:hidden" />
+                            {/* Drag Handle (Mobile) */}
+                            <div className="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-6 sm:hidden" />
+                            <button
+                                onClick={() => setShowDestinationModal(false)}
+                                className="absolute top-6 right-6 text-slate-400 p-2 hover:bg-slate-50 rounded-full transition-colors close-modal-btn"
+                            >
+                                <X size={20} />
+                            </button>
+                            <style>{`
+                                .close-modal-btn:hover { color: ${THEME.colors.brandNavy} !important; }
+                            `}</style>
 
-                            <button onClick={() => setShowDestinationModal(false)} className="absolute top-6 right-6 text-white/50 hover:text-white p-2 hover:bg-white/10 rounded-full transition-colors"><X size={20} /></button>
-
-                            <h2 className="text-xl font-black text-white mb-1">Where to?</h2>
+                            <h2 className="text-xl font-black mb-1" style={{ color: THEME.colors.brandNavy }}>Where to?</h2>
                             {pickupAddress && (
                                 <div className="flex items-center gap-2 mb-6 text-xs text-slate-400">
                                     <MapPin size={12} className="text-amber-500" />
@@ -700,29 +765,35 @@ export default function ServiceSelection() {
                             {destination && (
                                 <div className="mt-6 space-y-3">
                                     {/* Route Info Card */}
-                                    <div className="p-4 bg-amber-500/10 rounded-xl border border-amber-500/20 flex justify-between items-center">
+                                    <div
+                                        className="p-4 rounded-xl border flex justify-between items-center"
+                                        style={{
+                                            backgroundColor: `${THEME.colors.primaryBrandColor}0D`, // 5% opacity
+                                            borderColor: `${THEME.colors.primaryBrandColor}33` // 20% opacity
+                                        }}
+                                    >
                                         <div className="flex-1 min-w-0 mr-4">
-                                            <p className="text-[10px] font-bold text-amber-500 uppercase tracking-wider mb-1">Dropoff</p>
-                                            <p className="text-sm font-medium text-white truncate leading-tight">{destination.name || destination.formatted_address}</p>
+                                            <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: THEME.colors.primaryBrandColor }}>Dropoff</p>
+                                            <p className="text-sm font-medium truncate leading-tight" style={{ color: THEME.colors.brandNavy }}>{destination.name || destination.formatted_address}</p>
                                         </div>
                                         {routeInfo ? (
                                             <div className="text-right shrink-0">
-                                                <p className="text-lg font-black text-white leading-none">{routeInfo.duration}</p>
-                                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">{routeInfo.distance}</p>
+                                                <p className="text-lg font-black leading-none" style={{ color: THEME.colors.brandNavy }}>{routeInfo.duration}</p>
+                                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-0.5">{routeInfo.distance}</p>
                                             </div>
                                         ) : (
-                                            <Loader2 className="w-4 h-4 text-amber-500 animate-spin" />
+                                            <Loader2 className="w-4 h-4 animate-spin" style={{ color: THEME.colors.primaryBrandColor }} />
                                         )}
                                     </div>
 
                                     {/* Pickup Optimization Info (Task 3 Placeholder - to be real data soon) */}
-                                    <div className="px-4 py-3 bg-blue-500/10 rounded-xl border border-blue-500/20 flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400">
+                                    <div className="px-4 py-3 bg-blue-50 rounded-xl border border-blue-100 flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
                                             <Clock size={16} />
                                         </div>
                                         <div>
-                                            <p className="text-[10px] font-bold text-blue-400 uppercase tracking-wider">Estimated Pickup</p>
-                                            <p className="text-xs text-white">
+                                            <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">Estimated Pickup</p>
+                                            <p className="text-xs" style={{ color: THEME.colors.brandNavy }}>
                                                 {pickupEta ? <span className="font-bold">{pickupEta}</span> : "Calculating..."}
                                             </p>
                                         </div>
@@ -735,9 +806,12 @@ export default function ServiceSelection() {
                                 onClick={handleFinalSubmit}
                                 className={`w-full h-14 rounded-xl font-black text-sm uppercase tracking-wider transition-all mt-6 shadow-lg
                                 ${destination && !submitting
-                                        ? 'bg-amber-500 text-black hover:scale-[1.02] hover:bg-amber-400'
-                                        : 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                                        ? 'text-black hover:scale-[1.02]'
+                                        : 'bg-slate-100 text-slate-400 cursor-not-allowed'
                                     }`}
+                                style={destination && !submitting ? {
+                                    backgroundColor: THEME.colors.primaryBrandColor
+                                } : {}}
                             >
                                 {submitting ? <Loader2 className="animate-spin mx-auto text-black" /> : 'Confirm Towing Request'}
                             </button>
@@ -760,6 +834,33 @@ export default function ServiceSelection() {
 }
 
 // Sub-component to handle Directions Rendering
+// Custom Polyline Component for Google Maps
+function Polyline(props: google.maps.PolylineOptions) {
+    const map = useMap();
+    const [polyline, setPolyline] = useState<google.maps.Polyline>();
+
+    // Initialise
+    useEffect(() => {
+        if (!map) return;
+        const line = new google.maps.Polyline(props);
+        line.setMap(map);
+        setPolyline(line);
+
+        return () => {
+            line.setMap(null);
+        };
+    }, [map]);
+
+    // Update options
+    useEffect(() => {
+        if (!polyline) return;
+        polyline.setOptions(props);
+    }, [polyline, props]);
+
+    return null;
+}
+
+// Sub-component to handle Directions Rendering
 function Directions({ origin, destination, onRouteCalculated }: {
     origin: google.maps.LatLngLiteral;
     destination: google.maps.LatLngLiteral;
@@ -769,6 +870,7 @@ function Directions({ origin, destination, onRouteCalculated }: {
     const routesLibrary = useMapsLibrary('routes');
     const [directionsService, setDirectionsService] = useState<google.maps.DirectionsService>();
     const [directionsRenderer, setDirectionsRenderer] = useState<google.maps.DirectionsRenderer>();
+    const [routePath, setRoutePath] = useState<google.maps.LatLng[]>([]);
 
     // Use refs to track the last calculated route to avoid redundant updates
     const lastRouteRef = useRef<string>('');
@@ -780,11 +882,8 @@ function Directions({ origin, destination, onRouteCalculated }: {
         const renderer = new routesLibrary.DirectionsRenderer({
             map,
             suppressMarkers: true,
-            polylineOptions: {
-                strokeColor: '#D4AF37', // TowMe Gold
-                strokeWeight: 6,
-                strokeOpacity: 0.8
-            }
+            suppressPolylines: true, // We draw our own Neon Flux lines
+            preserveViewport: true // CRITICAL: We manage the viewport manually for padding
         });
 
         setDirectionsService(service);
@@ -808,6 +907,22 @@ function Directions({ origin, destination, onRouteCalculated }: {
         }, (result, status) => {
             if (status === google.maps.DirectionsStatus.OK && result) {
                 directionsRenderer.setDirections(result);
+
+                // --- MAP PADDING ("Zoom Out" Logic) ---
+                if (result.routes[0]?.bounds && map) {
+                    map.fitBounds(result.routes[0].bounds, {
+                        top: 50,
+                        right: 20,
+                        bottom: 350, // Reserve space for the Uber-Style Sheet
+                        left: 20
+                    });
+                }
+
+                // Extract coordinates for the Neon Flux
+                if (result.routes[0]?.overview_path) {
+                    setRoutePath(result.routes[0].overview_path);
+                }
+
                 const leg = result.routes[0].legs[0];
                 const info = {
                     distance: leg.distance?.text || '',
@@ -822,5 +937,35 @@ function Directions({ origin, destination, onRouteCalculated }: {
         });
     }, [directionsService, directionsRenderer, origin, destination, onRouteCalculated]);
 
-    return null;
+    if (!routePath || routePath.length === 0) return null;
+
+    return (
+        <>
+            {/* 🛤️ FUTURE-TECH ROUTE STYLING (Blue Edition) */}
+
+            {/* Layer 1: The Outer Haze (Soft Blue Glow) */}
+            <Polyline
+                path={routePath}
+                strokeWeight={12}
+                strokeColor="rgba(0, 122, 255, 0.2)" // Faint Blue Haze
+                zIndex={10}
+            />
+
+            {/* Layer 2: The Inner Plasma (Bright Electric Blue) */}
+            <Polyline
+                path={routePath}
+                strokeWeight={6}
+                strokeColor="rgba(0, 122, 255, 0.8)" // Electric Blue
+                zIndex={11}
+            />
+
+            {/* Layer 3: The Energy Core (White Hot Center) */}
+            <Polyline
+                path={routePath}
+                strokeWeight={2}
+                strokeColor="#FFFFFF" // Pure White Core
+                zIndex={12}
+            />
+        </>
+    );
 }

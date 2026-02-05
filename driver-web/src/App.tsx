@@ -229,6 +229,13 @@ export default function App() {
     const [editingId, setEditingId] = useState<string | null>(null);
     const [redFlags, setRedFlags] = useState<Record<string, string>>({}); // Map Field Name -> Error Message
 
+    // Password Reset State
+    const [showPasswordReset, setShowPasswordReset] = useState(false);
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmNewPassword, setConfirmNewPassword] = useState('');
+    const [resetLoading, setResetLoading] = useState(false);
+
+
     // Effect: Check for Edit Mode (URL params)
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
@@ -475,9 +482,24 @@ export default function App() {
         };
     }, [incomingJobId]);
 
-    // Effect: Initialize Driver (Mount Only)
+    // Effect: Initialize Driver & Listen for Password Recovery
     useEffect(() => {
         initDriver();
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+            if (event === 'PASSWORD_RECOVERY') {
+                setShowPasswordReset(true);
+            }
+            if (event === 'SIGNED_IN' && session) {
+                setUser(session.user);
+            }
+            if (event === 'SIGNED_OUT') {
+                setUser(null);
+                setShowPasswordReset(false);
+            }
+        });
+
+        return () => subscription.unsubscribe();
     }, []);
 
     // Effect: Initial Geolocation (Fast Fix)
@@ -1042,7 +1064,93 @@ export default function App() {
         </div>
     );
 
+    // Intercept: Password Reset Modal
+    if (showPasswordReset) return (
+        <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 text-white font-sans relative overflow-hidden">
+            <div className="w-full max-w-sm relative z-10 animate-slide-up">
+                <div className="text-center mb-10">
+                    <h1 className="text-3xl font-black tracking-tighter text-white mb-2">Setup Password</h1>
+                    <p className="text-gray-400 text-xs">Secure your account to continue.</p>
+                </div>
+
+                <div className="glass-panel p-1 rounded-[2rem] bg-slate-900/95 border border-white/10">
+                    <form onSubmit={async (e) => {
+                        e.preventDefault();
+                        if (newPassword !== confirmNewPassword) {
+                            alert("Passwords do not match");
+                            return;
+                        }
+                        if (newPassword.length < 6) {
+                            alert("Password must be at least 6 characters");
+                            return;
+                        }
+                        setResetLoading(true);
+                        try {
+                            const { error } = await supabase.auth.updateUser({ password: newPassword });
+                            if (error) throw error;
+
+                            // Success! Trigger Email
+                            await supabase.functions.invoke('send-approval-email', {
+                                body: {
+                                    action: 'profile_created',
+                                    email: user.email,
+                                    name: user.user_metadata?.first_name || 'Driver', // Fallback
+                                    company_name: 'TowMe'
+                                }
+                            });
+
+                            alert("Password updated successfully! Welcome to the fleet.");
+                            setShowPasswordReset(false); // Go to Main App
+                        } catch (err: any) {
+                            console.error("Reset Error:", err);
+                            alert("Failed to update password: " + err.message);
+                        } finally {
+                            setResetLoading(false);
+                        }
+                    }} className="p-8 space-y-5">
+                        <div className="space-y-3">
+                            <label className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500 pl-4">New Password</label>
+                            <div className="relative group">
+                                <div className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-600 group-focus-within:text-amber-500 transition-colors">
+                                    <Lock size={18} />
+                                </div>
+                                <input
+                                    type="password"
+                                    required
+                                    value={newPassword}
+                                    onChange={(e: any) => setNewPassword(e.target.value)}
+                                    placeholder="••••••••"
+                                    className="w-full bg-slate-950/50 border border-white/5 rounded-[2rem] py-5 pl-16 pr-8 text-white font-bold placeholder:text-gray-700 focus:border-amber-500/50 outline-none transition-all focus:bg-slate-950"
+                                />
+                            </div>
+                        </div>
+                        <div className="space-y-3">
+                            <label className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500 pl-4">Confirm Password</label>
+                            <div className="relative group">
+                                <div className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-600 group-focus-within:text-amber-500 transition-colors">
+                                    <Lock size={18} />
+                                </div>
+                                <input
+                                    type="password"
+                                    required
+                                    value={confirmNewPassword}
+                                    onChange={(e: any) => setConfirmNewPassword(e.target.value)}
+                                    placeholder="••••••••"
+                                    className="w-full bg-slate-950/50 border border-white/5 rounded-[2rem] py-5 pl-16 pr-8 text-white font-bold placeholder:text-gray-700 focus:border-amber-500/50 outline-none transition-all focus:bg-slate-950"
+                                />
+                            </div>
+                        </div>
+                        <button type="submit" disabled={resetLoading} className="w-full py-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-sm flex items-center justify-center gap-2">
+                            {resetLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <span>SAVE PROFILE</span>}
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    );
+
     if (!user) return (
+
         <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 text-white font-sans relative overflow-hidden">
             <div className={`w-full max-w-sm relative z-10 animate-slide-up ${applicationModal !== 'none' ? 'blur-sm scale-95 pointer-events-none' : ''}`}>
                 <div className="text-center mb-10">

@@ -105,6 +105,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setSession(session);
             setUser(session?.user ?? null);
             if (session?.user) {
+                // PHASE 62: Lazy Sync "Provider" (Google vs Email)
+                // We do this client-side to avoid touching backend triggers blindly.
+                // It's idempotent (safe to run multiple times).
+                const provider = session?.user?.app_metadata?.provider || 'email';
+                if (provider === 'google') {
+                    // Phase 63 Audit: Sync Google Data (Name & Avatar)
+                    const { full_name, name } = session.user.user_metadata || {};
+                    const finalName = full_name || name;
+                    // const finalAvatar = avatar_url || picture; // Column not confirmed yet
+
+                    const updateData: any = { provider: 'google' };
+                    if (finalName) updateData.full_name = finalName;
+                    // if (finalAvatar) updateData.avatar_url = finalAvatar; // Uncomment if column exists
+
+                    // Fire and forget - don't block UI
+                    supabase.from('clients')
+                        .update(updateData)
+                        .eq('id', session.user.id)
+                        .then(({ error }) => {
+                            if (error) console.error("Provider/Data Sync Error:", error);
+                        });
+                }
+
                 await checkStatus(session.user.id);
             } else {
                 setIsSuspended(false);

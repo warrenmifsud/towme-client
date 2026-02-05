@@ -8,7 +8,10 @@ export default defineConfig({
   server: {
     port: 5175,
     strictPort: true,
-    host: true,
+    host: '192.168.7.49',
+    hmr: {
+      host: '192.168.7.49',
+    },
   },
   build: {
     rollupOptions: {

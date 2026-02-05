@@ -7,10 +7,10 @@
   line-height: 1.5;
   font-weight: 400;
 
-  /* Premium macOS-style Depth & Vibrancy */
-  background: radial-gradient(circle at center, #1a1a1a 0%, #050505 100%);
+  /* Premium Global White Theme */
+  background: #FFFFFF;
   background-attachment: fixed;
-  color: #f8fafc;
+  color: #000000;
 }
 
 body {
@@ -18,8 +18,7 @@ body {
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #0a0a0a;
-  /* Fallback */
+  background-color: #FFFFFF;
 }
 
 @layer components {
@@ -27,13 +26,14 @@ body {
   /* Premium Liquid Glass Effect */
   /* macOS ultraThinMaterial Effect */
   .glass-panel {
-    @apply bg-white/[0.02] backdrop-blur-[64px] border border-white/10 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] rounded-[40px] transition-all duration-500 overflow-hidden;
+    @apply bg-white/[0.02] backdrop-blur-[64px] border border-white/10 rounded-[40px] transition-all duration-500 overflow-hidden;
+    box-shadow: 0 32px 64px -16px rgba(0, 0, 0, 0.6);
     position: relative;
   }
 
   .glass-panel::before {
     content: '';
-    @apply absolute inset-0 bg-gradient-to-b from-white/[0.05] to-transparent pointer-events-none;
+    @apply absolute inset-0 bg-transparent pointer-events-none;
   }
 
   .glass-panel-gold {
@@ -54,7 +54,7 @@ body {
 
   /* Ferrari speed shimmer effect */
   .shimmer {
-    @apply relative overflow-hidden before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_2s_infinite] before:bg-gradient-to-r before:from-transparent before:via-white/10 before:to-transparent;
+    @apply relative overflow-hidden before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_2s_infinite] before:bg-white/10;
   }
 }
 

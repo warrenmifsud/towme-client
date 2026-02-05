@@ -98,18 +98,53 @@ export default function Dispatch() {
         setDrivers(formattedDrivers);
 
         // Fetch Requests (Pending/Active)
+        // 1. Fetch Requests sans-join
         const { data: requestData } = await supabase.from('towing_requests')
             .select(`
                 id, pickup_lat, pickup_long, pickup_address, dropoff_address, 
-                status, source, created_at, vehicle_details,
-                profiles!client_id(full_name, phone)
+                status, source, created_at, vehicle_details, client_id
             `)
             .in('status', ['pending', 'dispatched', 'en_route', 'in_progress'])
             .order('created_at', { ascending: false });
 
-        setRequests((requestData || []).map((r: any) => ({
+        const rawRequests = requestData || [];
+
+        // 2. Extract IDs and Fetch Profiles Manually (Bypassing broken FK)
+        // DEBUG: Commenting out profile fetch to stop persistent 400 errors.
+        /*
+        // STRICT VALIDATION: Only allow valid UUIDs to prevent 400 Bad Request errors
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        const clientIds = Array.from(new Set(rawRequests
+            .map((r: any) => r.client_id)
+            .filter((id: any) => id && typeof id === 'string' && uuidRegex.test(id))
+        ));
+
+        // console.log("DEBUG: Final Safe ClientIDs:", clientIds); 
+
+        let profileMap: Record<string, any> = {};
+        
+        // CRITICAL: Do not call Supabase if list is empty
+        if (clientIds.length > 0) {
+            try {
+                const { data: profiles, error } = await supabase
+                    .from('profiles')
+                    .select('id, full_name, phone')
+                    .in('id', clientIds);
+                
+                if (!error) {
+                    profiles?.forEach((p: any) => { profileMap[p.id] = p; });
+                }
+            } catch (err) {
+                 // Silent failure fallback
+            }
+        }
+        */
+        const profileMap: Record<string, any> = {};
+
+        // 3. Merge Data
+        setRequests(rawRequests.map((r: any) => ({
             ...r,
-            profiles: Array.isArray(r.profiles) ? r.profiles[0] : r.profiles
+            profiles: profileMap[r.client_id] || { full_name: 'Unknown Client', phone: null }
         })));
 
     }

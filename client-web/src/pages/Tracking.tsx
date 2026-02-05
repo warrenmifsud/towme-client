@@ -163,10 +163,7 @@ export default function Tracking() {
                             )}
                         </Map>
                     ) : (
-                        <div className="w-full h-full opacity-10" style={{
-                            backgroundImage: 'radial-gradient(#amber-500 1px, transparent 1px)',
-                            backgroundSize: '30px 30px'
-                        }}></div>
+                        <div className="w-full h-full opacity-10 bg-[#F9A825]"></div>
                     )}
                 </div>
 

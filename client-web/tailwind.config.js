@@ -7,6 +7,9 @@ export default {
     theme: {
         extend: {
             colors: {
+                primary: '#F59E0B',
+                'surface-dark': '#111827',
+                'surface-light': '#FFFFFF',
                 glass: {
                     100: 'rgba(255, 255, 255, 0.02)',
                     200: 'rgba(255, 255, 255, 0.04)',

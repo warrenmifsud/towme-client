@@ -170,7 +170,7 @@ export function useProgressiveLocation() {
                 {
                     enableHighAccuracy: true,
                     timeout: 15000,
-                    maximumAge: 0
+                    maximumAge: 30000 // Instant-On: Accept cached GPS from last 30s
                 }
             );
         };

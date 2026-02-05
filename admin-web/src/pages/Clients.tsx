@@ -12,6 +12,7 @@ interface Client {
     status: 'active' | 'suspended';
     suspension_reason?: string | null;
     suspended_until?: string | null;
+    provider?: string; // Phase 62
 }
 
 export default function Clients() {
@@ -193,6 +194,7 @@ export default function Clients() {
                         <thead>
                             <tr className="border-b border-white/5 text-left">
                                 <th className="p-4 text-xs font-bold text-theme-secondary uppercase tracking-widest">User</th>
+                                <th className="p-4 text-xs font-bold text-theme-secondary uppercase tracking-widest">Provider</th>
                                 <th className="p-4 text-xs font-bold text-theme-secondary uppercase tracking-widest">Contact</th>
                                 <th className="p-4 text-xs font-bold text-theme-secondary uppercase tracking-widest">Joined</th>
                                 <th className="p-4 text-xs font-bold text-theme-secondary uppercase tracking-widest">Status</th>
@@ -218,6 +220,20 @@ export default function Clients() {
                                                 </div>
                                                 <span className="font-medium text-theme-primary">{client.full_name || 'N/A'}</span>
                                             </div>
+                                        </td>
+                                        <td className="p-4">
+                                            {/* Phase 62: Provider Badge */}
+                                            {client.provider === 'google' ? (
+                                                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 w-fit">
+                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .533 5.347.533 12S5.867 24 12.48 24c3.44 0 6.013-1.133 8.2-3.293 2.253-2.253 2.947-5.467 2.947-8.133 0-.8-.067-1.453-.173-1.653H12.48z" /></svg>
+                                                    <span className="text-[10px] font-bold uppercase tracking-wider">Google</span>
+                                                </div>
+                                            ) : (
+                                                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/5 text-slate-400 border border-white/10 w-fit">
+                                                    <Mail size={10} />
+                                                    <span className="text-[10px] font-bold uppercase tracking-wider">Email</span>
+                                                </div>
+                                            )}
                                         </td>
                                         <td className="p-4">
                                             <div className="flex flex-col gap-1">

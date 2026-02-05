@@ -136,7 +136,7 @@ serve(async (req) => {
                     <p>Please click the button below to review these items and update your application. Your form will be pre-filled.</p>
 
                     <div style="text-align: center; margin: 32px 0;">
-                        <a href="https://localhost:5174/?action=edit&id=${data?.application_id}" class="button" style="background-color: #ef4444; color: #fff;">Update Application</a>
+                        <a href="https://localhost:5173/?action=edit&id=${data?.application_id}" class="button" style="background-color: #ef4444; color: #fff;">Update Application</a>
                     </div>
                 `;
                 break;

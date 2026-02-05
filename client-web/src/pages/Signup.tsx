@@ -61,16 +61,8 @@ export default function Signup() {
     };
 
     return (
-        <div className="min-h-screen w-full flex items-center justify-center p-6 bg-[#050505] overflow-hidden relative font-sans">
-            {/* macOS-style Depth Layers */}
-            <div className="absolute inset-0 z-0">
-                <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] bg-amber-500/5 rounded-full blur-[160px] animate-pulse"></div>
-                <div className="absolute bottom-[-10%] left-[-10%] w-[60%] h-[60%] bg-white/5 rounded-full blur-[160px]"></div>
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[radial-gradient(circle_at_center,rgba(0,0,0,0)_0%,rgba(0,0,0,0.4)_100%)]"></div>
-            </div>
-
-            <div className="glass-panel w-full max-w-md p-12 relative z-10 animate-fade-in">
-                <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none"></div>
+        <div className="min-h-screen w-full flex items-center justify-center p-6 bg-white overflow-hidden relative font-sans">
+            <div className="w-full max-w-md p-12 relative z-10 animate-fade-in border border-slate-100 rounded-[40px] shadow-2xl bg-white">
                 <div className="flex flex-col items-center mb-10">
                     <div className="w-20 h-20 rounded-3xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shadow-inner-gold mb-6 group transition-transform hover:scale-110">
                         <UserPlus className="text-amber-500 w-10 h-10 group-hover:rotate-12 transition-transform" />

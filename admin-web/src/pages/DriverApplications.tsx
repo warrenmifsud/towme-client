@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Check, X, MapPin, Mail, Loader2, Trash2, Truck, FileText, Calendar, Eye, Phone, Pencil, Save, Upload, AlertTriangle } from 'lucide-react';
+import { Check, X, MapPin, Mail, Loader2, Truck, FileText, Calendar, Eye, Phone, Pencil, Save, Upload, AlertTriangle } from 'lucide-react';
 
 interface DriverApplication {
     id: string;
@@ -46,9 +46,7 @@ export default function DriverApplications() {
     const [applications, setApplications] = useState<DriverApplication[]>([]);
     const [loading, setLoading] = useState(true);
 
-    const [rejectionModalOpen, setRejectionModalOpen] = useState(false);
     const [selectedApp, setSelectedApp] = useState<DriverApplication | null>(null);
-    const [rejectionReason, setRejectionReason] = useState('');
 
     // AI Agent State
     const [analysisModalOpen, setAnalysisModalOpen] = useState(false);
@@ -254,14 +252,6 @@ export default function DriverApplications() {
 
                     // DEBUG: Log ID Front validation
                     if (doc.name === 'ID Card Front') {
-                        console.log('🔍 DEBUG ID FRONT:', {
-                            name: doc.name,
-                            date: doc.date,
-                            isFrontDoc,
-                            isBackDoc,
-                            type: doc.type,
-                            willBeChecked: !isFrontDoc && (isBackDoc || doc.type === 'license')
-                        });
                     }
 
                     if (!isFrontDoc && (isBackDoc || doc.type === 'license')) {
@@ -621,63 +611,7 @@ export default function DriverApplications() {
         }
     }
 
-    function openRejectionModal(app: DriverApplication) {
-        setSelectedApp(app);
 
-        // Auto-generate rejection reason based on detailed red flags
-        const failedDocs: string[] = [];
-        const results = docAnalysisResults[app.id] || {};
-        const now = new Date();
-
-        const docs = [
-            { name: 'Driving License Front', path: app.driving_license_front_path, expiry: app.driving_license_front_expiry, type: 'license', side: 'front' },
-            { name: 'Driving License Back', path: app.driving_license_back_path, expiry: app.driving_license_back_expiry, type: 'license', side: 'back' },
-            { name: 'ID Card Front', path: app.id_card_front_path, expiry: null, type: 'id', side: 'front' },
-            { name: 'ID Card Back', path: app.id_card_back_path, expiry: app.id_card_back_expiry, type: 'id', side: 'back' },
-            { name: 'Insurance Policy', path: app.insurance_policy_path, expiry: app.insurance_policy_expiry, type: 'insurance', side: 'front' }, // Insurance usually single or front
-        ];
-
-        docs.forEach(doc => {
-            if (!doc.path) return;
-
-            // 1. Verification Failure (AI rejected it)
-            if (results[doc.name] === false) {
-                failedDocs.push(`${doc.name}: Image quality poor or content mismatch.`);
-            }
-
-            // 2. Expiry Check
-            if (doc.expiry) {
-                const expDate = new Date(doc.expiry);
-                if (expDate < now) {
-                    failedDocs.push(`${doc.name}: Document Expired on ${expDate.toLocaleDateString('en-GB')}.`);
-                }
-            } else {
-                // 3. Missing Expiry Check (Logic from DocumentRow)
-                // License/ID/Insurance generally need expiry, usually on back or explicitly set
-                const isFront = doc.name.toLowerCase().includes('front');
-                const needsExpiry = (doc.type === 'license' || doc.type === 'id' || doc.type === 'insurance') && !isFront;
-
-                if (needsExpiry) {
-                    failedDocs.push(`${doc.name}: Missing Expiry Date input.`);
-                }
-            }
-        });
-
-        // Pre-fill reason
-        const reason = failedDocs.length > 0
-            ? `Please address the following issues and re-submit:\n- ${failedDocs.join('\n- ')}\n\nThank you.`
-            : '';
-
-        setRejectionReason(reason);
-        setRejectionModalOpen(true);
-    }
-
-    async function confirmRejection() {
-        if (!selectedApp) return;
-        await updateStatus(selectedApp, 'rejected', rejectionReason);
-        setRejectionModalOpen(false);
-        setSelectedApp(null);
-    }
 
     async function updateStatus(app: DriverApplication, newStatus: 'approved' | 'rejected' | 'contacted' | 'changes_requested', reason?: string) {
         const updateData: any = { status: newStatus };
@@ -694,20 +628,67 @@ export default function DriverApplications() {
             return;
         }
 
+        // 1. Trigger Password Reset Email (Primary Authentication Method)
+        // Since we don't have a "Set Password" page, we use the Reset Flow to let them create one.
+        if (newStatus === 'approved') {
+            try {
+                const { error: resetError } = await supabase.auth.resetPasswordForEmail(app.email, {
+                    redirectTo: 'https://driver-web.vercel.app/update-password', // Placeholder - User can update locally if needed
+                });
+                if (resetError) console.warn("Password Reset Trigger Failed:", resetError);
+                else console.log("Password Reset Triggered for:", app.email);
+            } catch (authErr) {
+                console.error("Auth Trigger Error:", authErr);
+            }
+
+            // 2. Trigger Welcome Email (Custom Branding - VIA EDGE FUNCTION TO FIX CORS)
+            try {
+                // Invoke our new dedicated function
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                const { error: emailError } = await supabase.functions.invoke('send-approval-email', {
+                    body: {
+                        action: 'approve',
+                        email: app.email,
+                        name: app.owner_name,
+                        company_name: app.company_name
+                    }
+                });
+
+                if (emailError) {
+                    console.error("Edge Function Failed:", emailError);
+                    alert(`Failed to send Welcome Email (Edge Function): ${emailError.message || emailError}`);
+                } else {
+                    console.log("Welcome Email Triggered via Edge Function ✅");
+                    alert("Welcome Email Sent successfully!");
+                }
+
+            } catch (networkErr) {
+                console.error("Edge Function Invocation Failed:", networkErr);
+                alert("Failed to reach Edge Function. Is it deployed?");
+            }
+        }
+
         // Trigger Email Notification for Revisions
         if (newStatus === 'changes_requested') {
-            supabase.functions.invoke('send-email', {
-                body: {
-                    type: 'application_needs_revision', // Reuse existing template or create new one
-                    email: app.email,
-                    data: {
-                        shop_name: app.company_name, // Map company_name to shop_name for template compatibility
-                        rejection_reason: reason,
-                        application_id: app.id,
-                        applicant_name: app.owner_name
+            try {
+                // Fire and forget email (or await if critical)
+                await supabase.functions.invoke('send-email', {
+                    body: {
+                        type: 'application_needs_revision',
+                        email: app.email,
+                        data: {
+                            shop_name: app.company_name, // Map company_name to shop_name
+                            rejection_reason: reason,
+                            changes_requested: reason, // RESTORED: 'Shotgun' payload that worked (to Junk)
+                            record_id: app.id,
+                            application_id: app.id,
+                            applicant_name: app.owner_name // Keep this as it might be used by the template if available
+                        }
                     }
-                }
-            });
+                });
+            } catch (err) {
+                console.error("Failed to trigger revision email:", err);
+            }
         }
 
         // Optimistic update
@@ -741,6 +722,48 @@ export default function DriverApplications() {
                 <Loader2 className="animate-spin mr-2" /> Loading partner requests...
             </div>
         );
+    }
+
+    function generateRejectionDraft(app: DriverApplication, results: Record<string, boolean>) {
+        const issues: string[] = [];
+        const now = new Date();
+
+        const docs = [
+            { name: 'Driving License Front', path: app.driving_license_front_path, expiry: app.driving_license_front_expiry, type: 'license' },
+            { name: 'Driving License Back', path: app.driving_license_back_path, expiry: app.driving_license_back_expiry, type: 'license' },
+            { name: 'ID Card Front', path: app.id_card_front_path, expiry: undefined, type: 'id' },
+            { name: 'ID Card Back', path: app.id_card_back_path, expiry: app.id_card_back_expiry, type: 'id' },
+            { name: 'Insurance Policy', path: app.insurance_policy_path, expiry: app.insurance_policy_expiry, type: 'insurance' },
+        ];
+
+        docs.forEach(doc => {
+            if (!doc.path) return;
+
+            // 1. Verification Failure (AI rejected it)
+            if (results[doc.name] === false) {
+                issues.push(`${doc.name}: Image quality poor or content mismatch.`);
+            }
+
+            // 2. Expiry Check
+            if (doc.expiry) {
+                const expDate = new Date(doc.expiry);
+                if (expDate < now) {
+                    issues.push(`${doc.name}: Document Expired on ${expDate.toLocaleDateString('en-GB')}.`);
+                }
+            } else {
+                // 3. Missing Expiry Check
+                const isFront = doc.name.toLowerCase().includes('front');
+                const needsExpiry = (doc.type === 'license' || doc.type === 'id' || doc.type === 'insurance') && !isFront;
+
+                if (needsExpiry) {
+                    issues.push(`${doc.name}: Missing Expiry Date.`);
+                }
+            }
+        });
+
+        return issues.length > 0
+            ? "Please address the following issues:\n- " + issues.join("\n- ")
+            : "";
     }
 
     return (
@@ -1046,57 +1069,53 @@ export default function DriverApplications() {
                                 </div>
                             </div>
 
-                            {/* Revisions Actions */}
-                            {app.status === 'changes_requested' && (
-                                <div className="flex flex-col gap-3 justify-center border-l border-white/5 pl-6 min-w-[140px]">
-                                    <button
-                                        onClick={() => updateStatus(app, 'approved')}
-                                        className="glass-button bg-green-500/10 hover:bg-green-500/20 text-green-400 border-green-500/30 flex items-center justify-center gap-2"
-                                    >
-                                        <Check size={18} /> Approve
-                                    </button>
-                                    <button
-                                        onClick={() => openRejectionModal(app)}
-                                        className="px-4 py-2 rounded-xl border border-red-500/30 hover:bg-red-500/10 text-red-400 transition-colors flex items-center justify-center gap-2"
-                                    >
-                                        <X size={18} /> Reject
-                                    </button>
-                                </div>
-                            )}
+                            {/* Unified Action Footer */}
+                            <div className="mt-6 pt-4 border-t border-slate-200/50 flex flex-wrap items-center justify-end gap-3">
+                                {/* 1. Verify AI (Tech/Purple Theme) */}
+                                <button
+                                    onClick={() => analyzeApplication(app)}
+                                    className="px-4 py-2 rounded-lg font-medium text-sm transition-all
+                                               bg-indigo-50 text-indigo-700 border border-indigo-200 
+                                               hover:bg-indigo-100 hover:shadow-md flex items-center gap-2"
+                                >
+                                    <Loader2 size={16} className={analyzing && selectedApp?.id === app.id ? "animate-spin" : ""} />
+                                    ✨ Verify AI
+                                </button>
 
-                            {/* Action Buttons */}
-                            <div className="flex gap-3 justify-end border-t border-white/5 pt-4">
-                                {app.status === 'pending' && (
-                                    <>
-                                        <button onClick={() => updateStatus(app, 'contacted')} className="glass-button bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 border-blue-500/30 flex gap-2 items-center">
-                                            <Mail size={16} /> Mark Contacted
-                                        </button>
-                                        <button onClick={() => updateStatus(app, 'approved')} className="glass-button bg-green-500/10 text-green-400 hover:bg-green-500/20 border-green-500/30 flex gap-2 items-center">
-                                            <Check size={16} /> Approve
-                                        </button>
-                                        <button onClick={() => analyzeApplication(app)} className="glass-button bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 border-amber-500/30 flex gap-2 items-center">
-                                            <Loader2 size={16} className={analyzing && selectedApp?.id === app.id ? "animate-spin" : ""} /> Verify
-                                        </button>
-                                        <button onClick={() => openRejectionModal(app)} className="glass-button bg-red-500/10 text-red-400 hover:bg-red-500/20 border-red-500/30 flex gap-2 items-center">
-                                            <X size={16} /> Reject
-                                        </button>
-                                    </>
-                                )}
-                                {app.status === 'contacted' && (
-                                    <>
-                                        <button onClick={() => updateStatus(app, 'approved')} className="glass-button bg-green-500/10 text-green-400 hover:bg-green-500/20 border-green-500/30 flex gap-2 items-center">
-                                            <Check size={16} /> Approve Partner
-                                        </button>
-                                        <button onClick={() => openRejectionModal(app)} className="glass-button bg-red-500/10 text-red-400 hover:bg-red-500/20 border-red-500/30 flex gap-2 items-center">
-                                            <X size={16} /> Reject
-                                        </button>
-                                    </>
-                                )}
-                                {(app.status === 'rejected' || app.status === 'approved') && (
-                                    <button onClick={() => deleteApplication(app)} className="glass-button hover:bg-red-500/10 text-red-400 border-transparent hover:border-red-500/30 flex gap-2 items-center">
-                                        <Trash2 size={16} /> Delete
-                                    </button>
-                                )}
+                                {/* 2. Request Revisions (Warning/Amber Theme) */}
+                                <button
+                                    onClick={() => {
+                                        const draft = generateRejectionDraft(app, docAnalysisResults[app.id] || {});
+                                        const feedback = window.prompt("Confirm or edit the revision request:", draft);
+                                        if (feedback && feedback.trim().length > 0) {
+                                            updateStatus(app, 'changes_requested', feedback);
+                                        }
+                                    }}
+                                    className="px-4 py-2 rounded-lg font-medium text-sm transition-all
+                                               bg-amber-50 text-amber-700 border border-amber-200 
+                                               hover:bg-amber-100 hover:shadow-md"
+                                >
+                                    Request Revisions
+                                </button>
+
+                                {/* 3. Approve (Success/Green Theme - Matching "Approved" Badge) */}
+                                <button
+                                    onClick={() => updateStatus(app, 'approved')}
+                                    className="px-6 py-2 rounded-lg font-bold text-sm transition-all shadow-lg
+                                               bg-emerald-500 text-white border border-emerald-400
+                                               hover:bg-emerald-600 hover:shadow-emerald-500/30"
+                                >
+                                    Approve
+                                </button>
+
+                                {/* 4. Delete (Destructive/Red - Pushed to end or kept subtle) */}
+                                <button
+                                    onClick={() => deleteApplication(app)}
+                                    className="ml-2 px-4 py-2 rounded-lg font-medium text-sm transition-all
+                                               text-red-500 hover:bg-red-50 hover:text-red-700"
+                                >
+                                    Delete
+                                </button>
                             </div>
                         </div>
                     ))
@@ -1283,58 +1302,7 @@ export default function DriverApplications() {
                 )
             }
 
-            {/* Rejection Modal */}
-            {
-                rejectionModalOpen && selectedApp && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/5 backdrop-blur-sm p-4">
-                        <div className="glass-panel p-6 max-w-md w-full animate-enter">
-                            <h3 className="text-xl font-bold text-theme-primary mb-2">Reject Application</h3>
-                            <p className="text-theme-secondary text-sm mb-4">
-                                Please provide a reason for rejection. This will be sent to the applicant.
-                            </p>
 
-                            <textarea
-                                className="glass-input h-32 mb-4 resize-none"
-                                placeholder="Reason for rejection..."
-                                value={rejectionReason}
-                                onChange={(e) => setRejectionReason(e.target.value)}
-                                autoFocus
-                            />
-
-                            <div className="flex justify-end gap-3">
-                                <button
-                                    onClick={() => setRejectionModalOpen(false)}
-                                    className="px-4 py-2 text-theme-secondary hover:text-theme-primary transition-colors"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={confirmRejection}
-                                    disabled={!rejectionReason.trim()}
-                                    className="glass-button bg-red-500/10 hover:bg-red-500/20 text-red-400 border-red-500/30"
-                                >
-                                    Confirm Rejection
-                                </button>
-                            </div>
-
-                            <div className="mt-4 pt-4 border-t border-white/5 flex justify-center">
-                                <button
-                                    onClick={async () => {
-                                        if (!selectedApp || !rejectionReason.trim()) return;
-                                        await updateStatus(selectedApp, 'changes_requested', rejectionReason);
-                                        setRejectionModalOpen(false);
-                                        setSelectedApp(null);
-                                    }}
-                                    disabled={!rejectionReason.trim()}
-                                    className="text-xs text-amber-500 hover:text-amber-400 font-bold uppercase tracking-widest flex items-center gap-2"
-                                >
-                                    <Mail size={12} /> Request Update Instead
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )
-            }
         </div >
     );
 }

@@ -776,13 +776,13 @@ export default function ServiceCategories() {
             {/* Bulk Update Modal */}
             {showBulkModal && (
                 <div className="fixed inset-0 bg-white/5 backdrop-blur-sm flex items-center justify-center z-50">
-                    <div className="surface-modal w-full max-w-sm p-8 animate-in fade-in zoom-in duration-200">
-                        <h3 className="text-xl font-bold text-theme-primary mb-2">Adjust Prices</h3>
-                        <p className="text-sm text-gray-400 mb-6">Enter a percentage to increase or decrease all service prices.</p>
+                    <div className="glass-panel border border-white/40 shadow-2xl w-full max-w-sm p-8 animate-in fade-in zoom-in duration-200">
+                        <h3 className="text-xl font-bold text-slate-900 mb-2">Adjust Prices</h3>
+                        <p className="text-sm text-slate-600 mb-6">Enter a percentage to increase or decrease all service prices.</p>
 
                         <form onSubmit={handleBulkUpdate}>
                             <div className="mb-6">
-                                <label className="block text-sm text-gray-400 mb-1">Percentage Change (%)</label>
+                                <label className="block text-sm text-slate-900 font-bold mb-1">Percentage Change (%)</label>
                                 <input
                                     type="number"
                                     value={bulkPercentage}
@@ -791,7 +791,7 @@ export default function ServiceCategories() {
                                     placeholder="e.g. 10 for +10%"
                                     required
                                 />
-                                <p className="text-xs text-gray-500 mt-2">
+                                <p className="text-xs text-slate-500 mt-2">
                                     Use negative numbers for discounts (e.g. -5).
                                 </p>
                             </div>
@@ -806,7 +806,7 @@ export default function ServiceCategories() {
                                 </button>
                                 <button
                                     type="submit"
-                                    className="glass-button flex-1 bg-green-500/20 hover:bg-green-500/30 border-green-500/30 text-green-200"
+                                    className="glass-button flex-1 bg-orange-500 hover:bg-orange-600 text-white shadow-lg shadow-orange-500/20"
                                 >
                                     Apply
                                 </button>
@@ -819,31 +819,31 @@ export default function ServiceCategories() {
             {/* Schedule Pricing Modal */}
             {showScheduleModal && (
                 <div className="fixed inset-0 bg-white/5 backdrop-blur-sm flex items-center justify-center z-50">
-                    <div className="glass-panel border border-white/40 shadow-2xl w-full max-w-lg p-8 animate-in fade-in zoom-in duration-200 max-h-[90vh] overflow-y-auto">
-                        <h3 className="text-xl font-bold text-theme-primary mb-2">Schedule Price Change</h3>
-                        <p className="text-sm text-gray-400 mb-6">Automatically adjust prices for selected services during a date range.</p>
+                    <div className="glass-panel border border-white/40 shadow-2xl w-full max-w-lg p-8 animate-in fade-in zoom-in duration-200 max-h-[90vh] overflow-y-auto text-slate-900">
+                        <h3 className="text-xl font-bold text-slate-900 mb-2">Schedule Price Change</h3>
+                        <p className="text-sm text-slate-700 mb-6">Automatically adjust prices for selected services during a date range.</p>
 
                         <form onSubmit={handleScheduleSubmit}>
                             {/* Service Selection */}
                             <div className="mb-6">
-                                <label className="block text-sm text-gray-400 mb-2">Select Services</label>
-                                <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto p-2 bg-white/5 rounded-lg border border-white/10">
+                                <label className="block text-sm text-slate-900 font-bold mb-2">Select Services</label>
+                                <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar p-2 bg-white/50 rounded-lg border border-slate-200">
                                     {categories.map(cat => (
                                         <div
                                             key={cat.id}
                                             onClick={() => toggleServiceSelection(cat.id)}
                                             className={`
-                                                flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors
-                                                ${selectedServices.includes(cat.id) ? 'bg-purple-500/20 border border-purple-500/30' : 'hover:bg-white/5 border border-transparent'}
+                                                flex items-start gap-3 p-3 rounded-lg cursor-pointer transition-colors
+                                                ${selectedServices.includes(cat.id) ? 'bg-purple-100 border border-purple-300' : 'hover:bg-slate-100 border border-transparent'}
                                             `}
                                         >
-                                            <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${selectedServices.includes(cat.id) ? 'bg-purple-500 border-purple-500' : 'border-gray-500'}`}>
-                                                {selectedServices.includes(cat.id) && <div className="w-2 h-2 bg-white rounded-full" />}
+                                            <div className={`w-4 h-4 mt-0.5 rounded border flex items-center justify-center shrink-0 ${selectedServices.includes(cat.id) ? 'bg-purple-500 border-purple-500' : 'border-gray-500'}`}>
+                                                {selectedServices.includes(cat.id) && <div className="w-2 h-2 bg-purple-600 rounded-full" />}
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex justify-between items-center gap-2">
-                                                    <span className="text-sm text-gray-300 truncate font-medium">{cat.name}</span>
-                                                    <span className="text-xs text-gray-400 font-mono">€{cat.base_price}</span>
+                                                    <span className="text-sm text-slate-900 whitespace-normal break-words leading-tight font-bold">{cat.name}</span>
+                                                    <span className="text-xs text-slate-600 font-mono">€{cat.base_price}</span>
                                                 </div>
                                                 {schedulePercent && !isNaN(parseFloat(schedulePercent)) && (
                                                     <div className="text-[10px] text-purple-400 font-bold mt-1 flex items-center gap-1">
@@ -861,7 +861,7 @@ export default function ServiceCategories() {
 
                             <div className="grid grid-cols-1 gap-4 mb-6">
                                 <div>
-                                    <label className="block text-sm text-gray-400 mb-1">Start</label>
+                                    <label className="block text-sm text-slate-900 font-bold mb-1">Start</label>
                                     <div className="flex gap-2">
                                         <DatePickerParts
                                             value={startDate}
@@ -871,13 +871,13 @@ export default function ServiceCategories() {
                                             type="time"
                                             value={startTime}
                                             onChange={e => setStartTime(e.target.value)}
-                                            className="bg-white/5 border border-white/10 rounded-xl px-4 h-12 w-32 outline-none focus:border-blue-500/50 focus:bg-blue-500/5 text-theme-primary text-sm transition-all duration-300 font-mono"
+                                            className="bg-white border border-slate-300 rounded-xl px-4 h-12 w-32 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-slate-900 text-sm transition-all duration-300 font-mono"
                                             required
                                         />
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="block text-sm text-gray-400 mb-1">End</label>
+                                    <label className="block text-sm text-slate-900 font-bold mb-1">End</label>
                                     <div className="flex gap-2">
                                         <DatePickerParts
                                             value={endDate}
@@ -887,7 +887,7 @@ export default function ServiceCategories() {
                                             type="time"
                                             value={endTime}
                                             onChange={e => setEndTime(e.target.value)}
-                                            className="bg-white/5 border border-white/10 rounded-xl px-4 h-12 w-32 outline-none focus:border-blue-500/50 focus:bg-blue-500/5 text-theme-primary text-sm transition-all duration-300 font-mono"
+                                            className="bg-white border border-slate-300 rounded-xl px-4 h-12 w-32 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-slate-900 text-sm transition-all duration-300 font-mono"
                                             required
                                         />
                                     </div>
@@ -895,16 +895,16 @@ export default function ServiceCategories() {
                             </div>
 
                             <div className="mb-8">
-                                <label className="block text-sm text-gray-400 mb-1">Percentage Adjustment (%)</label>
+                                <label className="block text-sm text-slate-900 font-bold mb-1">Percentage Adjustment (%)</label>
                                 <input
                                     type="number"
                                     value={schedulePercent}
                                     onChange={e => setSchedulePercent(e.target.value)}
-                                    className="bg-white/5 border border-white/10 rounded-xl px-4 h-12 w-full outline-none focus:border-purple-500/50 focus:bg-purple-500/5 text-theme-primary text-sm transition-all duration-300"
+                                    className="bg-white border border-slate-300 rounded-xl px-4 h-12 w-full outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 text-slate-900 text-sm transition-all duration-300"
                                     placeholder="e.g. 20 for +20%"
                                     required
                                 />
-                                <p className="text-xs text-gray-500 mt-2">
+                                <p className="text-xs text-slate-600 mt-2">
                                     Price will be {schedulePercent ? (parseFloat(schedulePercent) > 0 ? 'increased' : 'decreased') : 'changed'} by {Math.abs(parseFloat(schedulePercent) || 0)}% during this period.
                                 </p>
                             </div>
@@ -918,13 +918,13 @@ export default function ServiceCategories() {
                                         setSchedulePercent('');
                                         setSelectedServices([]);
                                     }}
-                                    className="glass-button flex-1 bg-white/5 hover:bg-white/10"
+                                    className="px-4 py-2 rounded-lg font-medium transition-colors bg-orange-500 hover:bg-orange-600 text-white shadow-lg shadow-orange-500/20 flex-1"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     type="submit"
-                                    className="glass-button flex-1 bg-purple-500/20 hover:bg-purple-500/30 border-purple-500/30 text-purple-200"
+                                    className="glass-button flex-1 shadow-lg shadow-orange-500/20"
                                 >
                                     Create Schedule
                                 </button>
