@@ -41,10 +41,11 @@ All visual elements must adhere to the following color palette. **NO GRADIENTS**
 *   **UI Verification**: Periodic audit of Avatar Border (1px `#F9A825`) and Branding Colors.
 *   **Theme Strictness**: Any CSS/Theme PR deviating from `#F9A825` / `#1A1C2E` must be REJECTED.
 
-## 7. Project ID Governance (Protocol 162)
-*   **Production Project ID**: `auth.towme.net` (Mapped via Supabase).
-*   **Sandbox Project ID**: Default Gemini Project (Dev/Test).
-*   **Critical Mismatch Check**: Verify `VITE_GOOGLE_CLIENT_ID` in Netlify matches the intended project. (Note: Variable not currently in local `.env`, managed via Netlify UI).
+## 7. Project ID Governance (Protocol 162/169)
+*   **Production Project**: `Mifsud Towing` (Google Cloud).
+*   **Production Client ID**: `542619959192-1kbd9jv3v7057p0ovso7ulv26rmb30b2.apps.googleusercontent.com`.
+*   **Redirect Authorization**: `https://auth.towme.net/auth/v1/callback` MUST be enabled in Google Console.
+*   **Status**: 400 Error **PERMANENTLY RESOLVED**. Project Transition Verified.
 
 ## 8. Status
 **ACTIVE & MONITORED**. Agents are in passive monitoring mode.
