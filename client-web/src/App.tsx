@@ -11,6 +11,7 @@ const Login = lazy(() => import('./pages/Login'));
 const Signup = lazy(() => import('./pages/Signup'));
 const Tracking = lazy(() => import('./pages/Tracking'));
 const Suspended = lazy(() => import('./pages/Suspended'));
+const Landing = lazy(() => import('./pages/Landing'));
 
 function LoadingScreen() {
   return (
@@ -81,7 +82,16 @@ function App() {
                   {/* Suspended Page */}
                   <Route path="/suspended" element={<Suspended />} />
 
-                  <Route path="/" element={<Home />} />
+                  {/* Use Dashboard for Authenticated Home */}
+                  <Route path="/dashboard" element={
+                    <ProtectedRoute>
+                      <Home />
+                    </ProtectedRoute>
+                  } />
+
+                  {/* Public Landing (Auto-redirects to Dashboard if logged in) */}
+                  <Route path="/" element={<Landing />} />
+
                   <Route path="/vendors" element={<Vendors />} />
 
                   {/* Protected Routes */}

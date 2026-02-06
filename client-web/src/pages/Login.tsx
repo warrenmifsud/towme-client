@@ -26,7 +26,8 @@ export default function Login() {
             });
 
             if (error) throw error;
-            navigate('/');
+            if (error) throw error;
+            navigate('/dashboard');
         } catch (err: any) {
             setError(err.message || 'Failed to sign in');
         } finally {
