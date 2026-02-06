@@ -72,8 +72,8 @@ All visual elements must adhere to the following color palette. **NO GRADIENTS**
 *   **Credential Rotation**: Client ID Verification Complete (`...b30b2`).
 *   **Secret Management**: Client Secrets MUST NEVER be committed to code. They are managed manually in Supabase Dashboard.
 *   **Sync State**: Netlify `netlify.toml` matches Production Client ID.
-*   **Deployment**: Manual CLI Build Successful. CORS Headers Removed.
-*   **Status**: **LIVE**. Waiting for final Login verification.
+*   **Deployment**: LIVE. Legacy URL active (`supabase.co`) to bypass broken Custom Domain.
+*   **Status**: **OPERATIONAL**. Google Sign-In working. Consent Screen branding temporarily degraded (shows raw URL).
 
 ## 12. Status
 **ACTIVE & MONITORED**. Agents are in passive monitoring mode.
