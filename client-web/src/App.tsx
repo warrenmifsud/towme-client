@@ -12,6 +12,8 @@ const Signup = lazy(() => import('./pages/Signup'));
 const Tracking = lazy(() => import('./pages/Tracking'));
 const Suspended = lazy(() => import('./pages/Suspended'));
 const Landing = lazy(() => import('./pages/Landing'));
+const Privacy = lazy(() => import('./pages/Privacy'));
+const Terms = lazy(() => import('./pages/Terms'));
 
 function LoadingScreen() {
   return (
@@ -91,6 +93,8 @@ function App() {
 
                   {/* Public Landing (Auto-redirects to Dashboard if logged in) */}
                   <Route path="/" element={<Landing />} />
+                  <Route path="/privacy" element={<Privacy />} />
+                  <Route path="/terms" element={<Terms />} />
 
                   <Route path="/vendors" element={<Vendors />} />
 

@@ -34,17 +34,17 @@ export default function Landing() {
             {/* Hero Section */}
             <main className="flex-1 flex flex-col items-center justify-center p-6 text-center z-10 relative">
                 <h1 className="text-5xl md:text-7xl font-black text-white leading-tight mb-6">
-                    Elite Roadside <br />
-                    <span style={{ color: THEME.colors.primaryBrandColor }}>Assistance.</span>
+                    TowMe — Your Reliable <br />
+                    <span style={{ color: THEME.colors.primaryBrandColor }}>Towing Partner.</span>
                 </h1>
                 <p className="text-slate-400 text-lg md:text-xl max-w-2xl mb-12 font-medium">
-                    TowMe connects you with the fastest, most reliable towing services in Malta.
-                    Immediate dispatch, real-time tracking, and professional drivers.
+                    A specialized platform for managing towing requests and roadside assistance efficiently.
+                    Professional Towing & Roadside Assistance Management.
                 </p>
 
                 <div className="flex flex-col gap-4 w-full max-w-sm">
                     <button
-                        onClick={() => navigate('/signup')}
+                        onClick={() => navigate('/login')}
                         className="w-full py-4 rounded-xl text-lg font-bold uppercase tracking-widest shadow-lg transition-transform active:scale-[0.98] hover:opacity-95"
                         style={{
                             backgroundColor: THEME.colors.primaryBrandColor,
@@ -52,16 +52,6 @@ export default function Landing() {
                         }}
                     >
                         Get Started
-                    </button>
-                    <button
-                        onClick={() => navigate('/login')}
-                        className="w-full py-4 rounded-xl text-lg font-bold uppercase tracking-widest border-2 transition-colors hover:bg-white/5"
-                        style={{
-                            borderColor: THEME.colors.primaryBrandColor,
-                            color: THEME.colors.white
-                        }}
-                    >
-                        Sign In
                     </button>
                 </div>
             </main>
@@ -72,8 +62,8 @@ export default function Landing() {
                     &copy; 2026 Mifsud Towing. All Rights Reserved.
                 </p>
                 <div className="flex justify-center gap-6 text-xs font-bold uppercase tracking-wider">
-                    <a href="/privacy-policy" className="text-slate-400 hover:text-white transition-colors">Privacy Policy</a>
-                    <a href="/terms-of-service" className="text-slate-400 hover:text-white transition-colors">Terms of Service</a>
+                    <a href="/privacy" className="text-slate-400 hover:text-white transition-colors" style={{ color: THEME.colors.primaryBrandColor }}>Privacy Policy</a>
+                    <a href="/terms" className="text-slate-400 hover:text-white transition-colors" style={{ color: THEME.colors.primaryBrandColor }}>Terms of Service</a>
                 </div>
             </footer>
 
