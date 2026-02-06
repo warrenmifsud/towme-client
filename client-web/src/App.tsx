@@ -11,7 +11,7 @@ const Login = lazy(() => import('./pages/Login'));
 const Signup = lazy(() => import('./pages/Signup'));
 const Tracking = lazy(() => import('./pages/Tracking'));
 const Suspended = lazy(() => import('./pages/Suspended'));
-const Landing = lazy(() => import('./pages/Landing'));
+const LandingPage = lazy(() => import('./pages/LandingPage'));
 const Privacy = lazy(() => import('./pages/Privacy'));
 const Terms = lazy(() => import('./pages/Terms'));
 
@@ -92,7 +92,7 @@ function App() {
                   } />
 
                   {/* Public Landing (Auto-redirects to Dashboard if logged in) */}
-                  <Route path="/" element={<Landing />} />
+                  <Route path="/" element={<LandingPage />} />
                   <Route path="/privacy" element={<Privacy />} />
                   <Route path="/terms" element={<Terms />} />
 
