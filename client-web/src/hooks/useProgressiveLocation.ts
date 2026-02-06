@@ -108,7 +108,7 @@ export function useProgressiveLocation() {
                 {
                     enableHighAccuracy: false,
                     timeout: 5000,
-                    maximumAge: 60000 // Accept 1-minute-old position
+                    maximumAge: 300000 // 5 minutes cache
                 }
             );
         };
@@ -169,8 +169,8 @@ export function useProgressiveLocation() {
                 },
                 {
                     enableHighAccuracy: true,
-                    timeout: 15000,
-                    maximumAge: 30000 // Instant-On: Accept cached GPS from last 30s
+                    timeout: 10000,
+                    maximumAge: 300000 // 5 minutes cache
                 }
             );
         };

@@ -157,7 +157,7 @@ export default function Home() {
                 () => {
                     console.warn("GPS Access failed or timed out. Staying with Fast Path data.");
                 },
-                { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
             );
         };
 
