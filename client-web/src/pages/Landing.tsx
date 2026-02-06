@@ -38,7 +38,7 @@ export default function Landing() {
                     <span style={{ color: THEME.colors.primaryBrandColor }}>TowMe</span>
                 </h1>
                 <p className="text-slate-400 text-lg md:text-xl max-w-2xl mb-12 font-medium">
-                    TowMe provides professional roadside assistance management and towing dispatch services.
+                    TowMe provides professional roadside assistance and towing management services.
                 </p>
 
                 <div className="flex flex-col gap-4 w-full max-w-sm">
