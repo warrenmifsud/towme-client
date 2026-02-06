@@ -5,17 +5,10 @@ const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'your-anon-key';
 
 const projectRef = 'letjcjqppyxzqfthdqul'; // Mifsud Towing Project Ref
 
-export const supabase = createClient(supabaseUrl, supabaseKey, {
-    auth: {
-        autoRefreshToken: true,
+auth: {
+    autoRefreshToken: true,
         persistSession: true,
-        detectSessionInUrl: true,
-        flowType: 'pkce',
-    },
-    global: {
-        headers: {
-            'apikey': supabaseKey,
-            'x-project-ref': projectRef,
-        },
+            detectSessionInUrl: true,
+                flowType: 'pkce',
     },
 });
