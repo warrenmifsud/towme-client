@@ -68,5 +68,11 @@ All visual elements must adhere to the following color palette. **NO GRADIENTS**
 *   **Preflight Sync**: `src/lib/supabase.ts` usage of `apikey` header satisfies CORS checks.
 *   **Status**: **PENDING USER ACTION** (Dashboard Configuration).
 
-## 11. Status
+## 11. Critical Auth Sync (Protocol 177)
+*   **Credential Rotation**: Client ID Verification Complete (`...b30b2`).
+*   **Secret Management**: Client Secrets MUST NEVER be committed to code. They are managed manually in Supabase Dashboard.
+*   **Sync State**: Netlify `netlify.toml` matches Production Client ID.
+*   **Status**: **PENDING USER ACTION** (Supabase Provider Update).
+
+## 12. Status
 **ACTIVE & MONITORED**. Agents are in passive monitoring mode.
