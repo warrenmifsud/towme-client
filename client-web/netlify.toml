@@ -4,6 +4,6 @@
   publish = "dist"
 
 [build.environment]
-  VITE_SUPABASE_URL = "https://auth.towme.net"
+  VITE_SUPABASE_URL = "https://letjcjqppyxzqfthdqul.supabase.co"
   VITE_GOOGLE_CLIENT_ID = "542619959192-1kbd9jv3v7057p0ovso7ulv26rmb30b2.apps.googleusercontent.com"
   NODE_VERSION = "20"
