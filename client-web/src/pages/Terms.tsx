@@ -39,8 +39,8 @@ export default function Terms() {
                         <section>
                             <h2 className="text-xl font-bold text-white mb-4">Service Scope</h2>
                             <p>
-                                TowMe acts as a management platform connecting users with towing service providers.
-                                We strive for accuracy and reliability but are not liable for external service delays.
+                                TowMe provides a specialized platform for managing towing requests and roadside assistance.
+                                Users may request, track, and manage towing services through our dispatch system.
                             </p>
                         </section>
                     </div>

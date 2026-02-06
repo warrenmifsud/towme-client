@@ -29,11 +29,10 @@ export default function Privacy() {
 
                     <div className="space-y-8 text-slate-300 font-medium leading-relaxed">
                         <section>
-                            <h2 className="text-xl font-bold text-white mb-4">Data Collection & Usage</h2>
+                            <h2 className="text-xl font-bold text-white mb-4">Google User Data Policy</h2>
                             <p>
-                                TowMe collects email addresses via Google OAuth solely for user authentication
-                                and service management. We use Google User Data to personalize your experience
-                                and facilitate towing dispatches.
+                                We access your Google email solely to provide secure login via Supabase.
+                                We do not share this data with third parties.
                             </p>
                         </section>
 

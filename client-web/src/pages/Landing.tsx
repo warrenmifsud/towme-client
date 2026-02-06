@@ -32,14 +32,13 @@ export default function Landing() {
             </header>
 
             {/* Hero Section */}
+            {/* Hero Section */}
             <main className="flex-1 flex flex-col items-center justify-center p-6 text-center z-10 relative">
                 <h1 className="text-5xl md:text-7xl font-black text-white leading-tight mb-6">
-                    TowMe — Your Reliable <br />
-                    <span style={{ color: THEME.colors.primaryBrandColor }}>Towing Partner.</span>
+                    <span style={{ color: THEME.colors.primaryBrandColor }}>TowMe</span>
                 </h1>
                 <p className="text-slate-400 text-lg md:text-xl max-w-2xl mb-12 font-medium">
-                    A specialized platform for managing towing requests and roadside assistance efficiently.
-                    Professional Towing & Roadside Assistance Management.
+                    TowMe provides professional roadside assistance management and towing dispatch services.
                 </p>
 
                 <div className="flex flex-col gap-4 w-full max-w-sm">
