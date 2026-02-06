@@ -72,8 +72,8 @@ All visual elements must adhere to the following color palette. **NO GRADIENTS**
 *   **Credential Rotation**: Client ID Verification Complete (`...b30b2`).
 *   **Secret Management**: Client Secrets MUST NEVER be committed to code. They are managed manually in Supabase Dashboard.
 *   **Sync State**: Netlify `netlify.toml` matches Production Client ID.
-*   **Deployment**: Remote CLI is unavailable. "Clear Cache" requires Dashboard UI action.
-*   **Status**: **PENDING USER ACTION** (Supabase Provider Update).
+*   **Deployment**: Remote CLI blocked (Permissions/Auth Missing). Manual Dashboard Clean required.
+*   **Status**: **PENDING USER ACTION** (Supabase Provider Update & Dashboard Deploy).
 
 ## 12. Status
 **ACTIVE & MONITORED**. Agents are in passive monitoring mode.
