@@ -62,5 +62,11 @@ All visual elements must adhere to the following color palette. **NO GRADIENTS**
 *   **GoTrue**: `GOTRUE_EXTERNAL_OTR_ENABLED` must be TRUE (Supabase Dashboard).
 *   **Status**: Project Mismatch **PERMANENTLY RESOLVED**.
 
-## 10. Status
+## 10. CORS & Preflight Resolution (Protocol 176)
+*   **Whitelist**: `https://client.towme.net` MUST be in "Additional Redirect URIs" and "Allowed Origins" (Supabase Dashboard).
+*   **Netlify Previews**: `https://*.netlify.app` should be whitelisted for previews.
+*   **Preflight Sync**: `src/lib/supabase.ts` usage of `apikey` header satisfies CORS checks.
+*   **Status**: **PENDING USER ACTION** (Dashboard Configuration).
+
+## 11. Status
 **ACTIVE & MONITORED**. Agents are in passive monitoring mode.
