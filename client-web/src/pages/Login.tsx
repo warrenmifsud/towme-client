@@ -6,7 +6,7 @@ import { AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { THEME } from '../theme';
 
 export default function Login() {
-    console.log("LOGIN SCREEN LOADED - PHASE 60");
+    console.log("LOGIN SCREEN LOADED - PHASE 180 (CORS FIX)");
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
