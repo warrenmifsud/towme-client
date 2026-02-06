@@ -58,6 +58,17 @@ function calculateArrivalTime(durationText: string): string {
     return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
 }
 
+// Map Padding Component (Dynamic Map Resizing)
+function MapPaddingHandler({ bottomPadding }: { bottomPadding: number }) {
+    const map = useMap();
+    useEffect(() => {
+        if (!map) return;
+        // Shift map center UP by applying bottom padding
+        map.setPadding({ top: 0, right: 0, bottom: bottomPadding, left: 0 });
+    }, [map, bottomPadding]);
+    return null;
+}
+
 interface ServiceSelectionProps {
     destination?: google.maps.places.PlaceResult | null;
     categoryFilter?: string;
@@ -589,128 +600,120 @@ export default function ServiceSelection({ destination: propDestination, onBack,
                     </button>
                 </div>
 
-                {/* --- UBER-STYLE SERVICE SELECTOR (Z-20, SLIDE UP) --- */}
-                {/* --- LIGHT THEME SERVICE SELECTOR (Fixed Visibility) --- */}
+                {/* --- ADAPTIVE BOTTOM SHEET (Bolt-Style) --- */}
                 {destination && (
-                    <div className="absolute bottom-0 left-0 right-0 z-50 h-[45%] flex flex-col pointer-events-none">
+                    <>
+                        {/* Map Padding Handler: Pushes map content up so it's not hidden by the sheet */}
+                        <MapPaddingHandler bottomPadding={selectedService ? 320 : 280} />
 
-                        {/* "GLASS" LIGHT SHEET */}
-                        <div className="bg-white rounded-t-[25px] p-5 pb-10 shadow-[0_-5px_20px_rgba(0,0,0,0.1)] border-t border-slate-100 h-full flex flex-col pointer-events-auto">
+                        {/* SHEET CONTAINER */}
+                        <div className="absolute bottom-0 left-0 right-0 z-40 bg-white rounded-t-[24px] shadow-[0_-8px_30px_rgba(0,0,0,0.12)] flex flex-col max-h-[60vh] transition-all duration-300 ease-out animate-slide-up">
 
-                            {/* Handle Bar */}
-                            <div className="w-10 h-1 bg-[#E0E0E0] rounded-full mx-auto mb-4" />
+                            {/* Drag Handle */}
+                            <div className="w-full flex justify-center pt-3 pb-2 cursor-grab active:cursor-grabbing"
+                                onTouchStart={(e) => { /* Placeholder for drag logic */ }}>
+                                <div className="w-12 h-1.5 bg-slate-200 rounded-full" />
+                            </div>
 
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest">
-                                    Choose Service Level
+                            {/* Header: Title & Stats */}
+                            <div className="px-6 pb-4 flex items-center justify-between border-b border-slate-50">
+                                <h3 className="text-sm font-black text-[#1A1C2E] uppercase tracking-widest">
+                                    Select Service
                                 </h3>
-                                {/* Trip Stats */}
-                                <div className="flex flex-col items-end">
-                                    {routeInfo && (
-                                        <>
-                                            <span className="text-xs font-bold text-slate-900">{routeInfo.duration}</span>
-                                            <span className="text-[10px] text-slate-400">{routeInfo.distance}</span>
-                                        </>
-                                    )}
+                                {routeInfo && (
+                                    <div className="text-right">
+                                        <div className="text-sm font-bold text-[#1A1C2E]">{routeInfo.duration}</div>
+                                        <div className="text-[10px] font-bold text-slate-400 uppercase">{routeInfo.distance}</div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* SCROLLABLE LIST (Visual Viewport Aware) */}
+                            <div className="overflow-y-auto overflow-x-hidden flex-1 px-4 custom-scrollbar pb-32">
+                                <div className="space-y-3 py-4">
+                                    {categories.map((service) => {
+                                        const Icon = getIcon(service.icon_name);
+                                        const isSelected = selectedService === service.id;
+
+                                        return (
+                                            <button
+                                                key={service.id}
+                                                onClick={() => setSelectedService(service.id)}
+                                                className={`
+                                                    w-full relative group flex items-center p-4 rounded-2xl border-2 transition-all duration-200
+                                                    ${isSelected
+                                                        ? 'bg-[#FFF8E6] border-[#F9A825] shadow-sm'
+                                                        : 'bg-white border-transparent hover:border-slate-100 hover:bg-slate-50'
+                                                    }
+                                                `}
+                                            >
+                                                {/* Icon Container */}
+                                                <div className={`
+                                                    w-12 h-12 rounded-xl flex items-center justify-center shrink-0 mr-4 transition-colors
+                                                    ${isSelected ? 'bg-[#F9A825] text-[#1A1C2E]' : 'bg-slate-100 text-slate-400'}
+                                                `}>
+                                                    <Icon size={24} strokeWidth={2} />
+                                                </div>
+
+                                                {/* Text Content */}
+                                                <div className="flex-1 text-left">
+                                                    <div className="flex justify-between items-baseline mb-0.5">
+                                                        <span className={`text-base font-black ${isSelected ? 'text-[#1A1C2E]' : 'text-slate-700'}`}>
+                                                            {service.name}
+                                                        </span>
+                                                        <span className="text-base font-bold text-[#1A1C2E]">
+                                                            €{service.base_price}
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-xs font-medium text-slate-400 leading-snug pr-2">
+                                                        {service.description}
+                                                    </p>
+                                                </div>
+
+                                                {/* Selection Indicator (Radio Style) */}
+                                                <div className={`
+                                                    absolute right-4 w-4 h-4 rounded-full border-2 flex items-center justify-center
+                                                    ${isSelected ? 'border-[#F9A825]' : 'border-slate-200'}
+                                                `}>
+                                                    {isSelected && <div className="w-2 h-2 rounded-full bg-[#FA9825]" />}
+                                                </div>
+                                            </button>
+                                        );
+                                    })}
                                 </div>
                             </div>
 
-                            {/* SCROLLABLE SERVICE LIST (Prevent Overflow) */}
-                            <div className="flex-1 overflow-y-auto space-y-2 mb-4 scrollbar-hide">
-                                {categories.map((service) => {
-                                    const Icon = getIcon(service.icon_name);
-                                    const isSelected = selectedService === service.id;
+                            {/* STICKY FOOTER (Visual Viewport Safe) */}
+                            <div className="absolute bottom-0 left-0 right-0 z-50">
+                                {/* Gradient Fade to mask scrolling content */}
+                                <div className="h-12 w-full bg-gradient-to-t from-white to-transparent pointer-events-none" />
 
-                                    return (
-                                        <button
-                                            key={service.id}
-                                            onClick={() => setSelectedService(service.id)}
-                                            className={`
-                                                w-full flex items-center p-3 rounded-xl border transition-all duration-200 active:scale-[0.98]
-                                                ${isSelected
-                                                    ? 'bg-[#FFF5EB]'
-                                                    : 'bg-[#F9F9F9] border-transparent hover:border-slate-200'
-                                                }
-                                            `}
-                                            style={isSelected ? { borderColor: THEME.colors.primaryBrandColor } : {}}
-                                        >
-                                            {/* Icon */}
-                                            <div className="w-10 flex items-center justify-center">
-                                                <Icon className="w-6 h-6" style={{ color: isSelected ? THEME.colors.primaryBrandColor : THEME.colors.labelText }} />
-                                            </div>
-
-                                            {/* Text Info */}
-                                            <div className="flex-1 px-3 text-left">
-                                                <div className="text-base font-bold text-slate-900 leading-tight">
-                                                    {service.name}
-                                                </div>
-                                                <div className="text-xs text-slate-500 mt-0.5">
-                                                    {service.description}
-                                                </div>
-                                            </div>
-
-                                            {/* Price */}
-                                            <div className="text-right">
-                                                <div className="text-base font-bold text-slate-900">€{service.base_price}</div>
-                                            </div>
-                                        </button>
-                                    );
-                                })}
-                            </div>
-
-                            {/* CONFIRM BUTTON */}
-                            <button
-                                disabled={!selectedService}
-                                onClick={() => {
-                                    if (!selectedVehicleId) {
-                                        setActiveTab('vehicles');
-                                    } else {
-                                        handleInitialSelect();
-                                        console.log('Booking Confirmed for Service:', selectedService);
-                                    }
-                                }}
-                                className={`
-                                    w-full py-4 rounded-xl font-black text-lg uppercase tracking-wider flex items-center justify-center transition-all shadow-md active:scale-[0.98]
-                                    ${selectedService
-                                        ? 'text-white shadow-orange-500/30 hover:opacity-95'
-                                        : 'bg-slate-100 text-slate-300 cursor-not-allowed shadow-none'
-                                    }
-                                `}
-                                style={selectedService ? {
-                                    backgroundColor: THEME.colors.primaryBrandColor
-                                } : {}}
-                            >
-                                {selectedVehicleId ? 'CONFIRM TOW' : 'Select Vehicle'}
-                            </button>
-
-                            {/* Legacy Vehicles Tab (Hidden/Overlaid if active) */}
-                            {activeTab === 'vehicles' && (
-                                <div className="absolute inset-0 bg-white p-5 pb-10 z-30 flex flex-col rounded-t-[25px]">
-                                    <div className="flex items-center justify-between mb-6">
-                                        <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Select Vehicle</h3>
-                                        <button onClick={() => setActiveTab('services')} className="p-2 bg-slate-100 rounded-full">
-                                            <X className="w-4 h-4 text-slate-600" />
-                                        </button>
-                                    </div>
-                                    <div className="flex-1 overflow-y-auto -mx-5 px-5">
-                                        <VehicleManager onSelect={setSelectedVehicleId} selectedId={selectedVehicleId} />
-                                    </div>
-                                    {selectedVehicleId && (
-                                        <button
-                                            onClick={() => setActiveTab('services')}
-                                            className="w-full mt-4 py-4 rounded-xl text-white font-black uppercase tracking-wider shadow-md hover:opacity-95 transition-opacity"
-                                            style={{
-                                                backgroundColor: THEME.colors.primaryBrandColor
-                                            }}
-                                        >
-                                            Confirm Vehicle
-                                        </button>
-                                    )}
+                                <div className="bg-white px-6 pb-6 pt-2">
+                                    <button
+                                        disabled={!selectedService}
+                                        onClick={() => {
+                                            if (!selectedVehicleId) {
+                                                setActiveTab('vehicles');
+                                            } else {
+                                                handleInitialSelect();
+                                            }
+                                        }}
+                                        className={`
+                                            w-full h-14 rounded-xl font-black text-base uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg transition-all active:scale-[0.98]
+                                            ${selectedService
+                                                ? 'bg-[#F9A825] text-[#1A1C2E] hover:brightness-105 shadow-orange-500/20'
+                                                : 'bg-slate-100 text-slate-300 cursor-not-allowed shadow-none'
+                                            }
+                                        `}
+                                    >
+                                        {selectedVehicleId ? 'CONFIRM ORDER' : 'Choose Vehicle'}
+                                        {selectedService && <ArrowLeft className="w-5 h-5 rotate-180" />}
+                                    </button>
                                 </div>
-                            )}
+                            </div>
 
                         </div>
-                    </div>
+                    </>
                 )}
 
                 {/* Overlays (Error, Permissions, Destination Modal) */}

@@ -9,6 +9,11 @@
   NODE_VERSION = "20"
 
 # Explicitly pass through the Google Verification file (Paranoid Check)
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "https://accounts.google.com"
+
 [[redirects]]
   from = "/google192510f01db6e0be.html"
   to = "/google192510f01db6e0be.html"
