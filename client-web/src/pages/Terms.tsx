@@ -50,7 +50,7 @@ export default function Terms() {
             {/* Footer */}
             <footer className="p-8 text-center border-t border-white/5 z-10 relative bg-black/20">
                 <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">
-                    &copy; 2026 Mifsud Towing. All Rights Reserved.
+                    &copy; 2026 TowMe. All Rights Reserved.
                 </p>
             </footer>
         </div>

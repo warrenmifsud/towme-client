@@ -58,7 +58,7 @@ export default function Landing() {
             {/* Footer */}
             <footer className="p-8 text-center border-t border-white/5 z-10 relative bg-black/20">
                 <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-4">
-                    &copy; 2026 Mifsud Towing. All Rights Reserved.
+                    &copy; 2026 TowMe. All Rights Reserved.
                 </p>
                 <div className="flex justify-center gap-6 text-xs font-bold uppercase tracking-wider">
                     <a href="/privacy" className="text-slate-400 hover:text-white transition-colors" style={{ color: THEME.colors.primaryBrandColor }}>Privacy Policy</a>
