@@ -7,3 +7,15 @@
   VITE_SUPABASE_URL = "https://letjcjqppyxzqfthdqul.supabase.co"
   VITE_GOOGLE_CLIENT_ID = "542619959192-1kbd9jv3v7057p0ovso7ulv26rmb30b2.apps.googleusercontent.com"
   NODE_VERSION = "20"
+
+# Explicitly pass through the Google Verification file (Paranoid Check)
+[[redirects]]
+  from = "/google192510f01db6e0be.html"
+  to = "/google192510f01db6e0be.html"
+  status = 200
+
+# SPA Catch-all: Rewrite everything else to index.html
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
