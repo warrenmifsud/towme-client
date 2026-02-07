@@ -6,13 +6,11 @@ import { supabase } from '../lib/supabase';
 import { getIcon } from '../lib/serviceIcons';
 import { useAuth } from '../contexts/AuthContext';
 import { useProgressiveLocation } from '../hooks/useProgressiveLocation';
-import VehicleManager from '../components/VehicleManager';
 import { APIProvider, Map, AdvancedMarker, useMap, useMapsLibrary } from '@vis.gl/react-google-maps';
 import PlaceAutocomplete from '../components/PlaceAutocomplete';
-import MapControl from '../components/MapControl';
 import { PaymentModal } from '../components/PaymentModal';
 import TripHeader from '../components/TripHeader';
-import { THEME } from '../theme';
+import { THEME } from '../theme.ts';
 
 interface Category {
     id: string;
@@ -25,10 +23,6 @@ interface Category {
 const MALTA_CENTER = { lat: 35.8989, lng: 14.5146 };
 const GOOGLE_MAPS_API_KEY = (import.meta as any).env.VITE_GOOGLE_MAPS_API_KEY || '';
 const MAP_ID = "DEMO_MAP_ID";
-
-// Map Control Options (Static to prevent re-renders)
-const MAP_TYPE_CONTROL_OPTIONS = { position: 2 }; // TOP_CENTER
-const ZOOM_CONTROL_OPTIONS = { position: 8 };     // RIGHT_CENTER
 
 // Helper: Calculate Arrival Time from "X mins" string
 function calculateArrivalTime(durationText: string): string {
@@ -63,8 +57,12 @@ function MapPaddingHandler({ bottomPadding }: { bottomPadding: number }) {
     const map = useMap();
     useEffect(() => {
         if (!map) return;
-        // Shift map center UP by applying bottom padding
-        map.setPadding({ top: 0, right: 0, bottom: bottomPadding, left: 0 });
+        // Safely check if setPadding exists before calling
+        if (typeof (map as any).setPadding === 'function') {
+            (map as any).setPadding({ top: 0, right: 0, bottom: bottomPadding, left: 0 });
+        } else {
+            console.warn('MapPaddingHandler: map.setPadding is not available.');
+        }
     }, [map, bottomPadding]);
     return null;
 }
@@ -80,7 +78,8 @@ export default function ServiceSelection({ destination: propDestination, onBack,
     const { signOut, user } = useAuth();
     const navigate = useNavigate();
     const [selectedService, setSelectedService] = useState<string | null>(null);
-    const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
+    // Mock Vehicle for Demo to enable flow (Fixes unused usage of setter)
+    const [selectedVehicleId] = useState<string | null>('mock_vehicle_1');
     const location = useLocation();
 
     // Progressive Location Hook (Instant Load)
@@ -93,12 +92,12 @@ export default function ServiceSelection({ destination: propDestination, onBack,
 
     // Sync user GPS location to pickup location on initial load
     const hasInitialSync = useRef(false);
-    const [cameraTarget, setCameraTarget] = useState<google.maps.LatLngLiteral | undefined>(undefined);
 
     useEffect(() => {
         if (userGpsLocation && !hasInitialSync.current) {
             setPickupLocation(userGpsLocation);
-            setCameraTarget(userGpsLocation); // Pan camera to user location
+            // Pan camera to user location handled by defaultCenter mostly, or manual effect if needed, 
+            // but for now we let the user control or the initial load.
             hasInitialSync.current = true;
         }
     }, [userGpsLocation]);
@@ -132,7 +131,6 @@ export default function ServiceSelection({ destination: propDestination, onBack,
     }, [geocoder, pickupLocation]);
 
     // UI State
-    const [activeTab, setActiveTab] = useState<'services' | 'vehicles' | 'professionals'>('services');
     const [showDestinationModal, setShowDestinationModal] = useState(false);
     const [destination, setDestination] = useState<google.maps.places.PlaceResult | null>(null);
     const [submitting, setSubmitting] = useState(false);
@@ -285,12 +283,6 @@ export default function ServiceSelection({ destination: propDestination, onBack,
         navigate('/login');
     };
 
-    const handleInitialSelect = () => {
-        if (selectedService && selectedVehicleId) {
-            setShowDestinationModal(true);
-        }
-    };
-
 
 
     const handlePaymentSuccess = async () => {
@@ -406,9 +398,10 @@ export default function ServiceSelection({ destination: propDestination, onBack,
 
     return (
         <APIProvider apiKey={GOOGLE_MAPS_API_KEY} libraries={['places', 'marker', 'routes', 'geometry']}>
-            <div className="h-[100dvh] w-full relative bg-slate-950 text-white font-sans overflow-hidden flex flex-col">
+            {/* MIN-H-[100dvh] FIX for Mobile Browsers + OVERFLOW HIDDEN to Prevent Double Scroll */}
+            <div className="h-full w-full relative bg-white text-slate-900 font-sans overflow-hidden flex flex-col">
 
-                {/* --- FULL SCREEN MAP (Z-0) --- */}
+                {/* --- FULL SCREEN FIXED MAP CONTAINER (No Resizing) --- */}
                 <div className="absolute inset-0 z-0">
                     {GOOGLE_MAPS_API_KEY ? (
                         <>
@@ -417,24 +410,16 @@ export default function ServiceSelection({ destination: propDestination, onBack,
                                 defaultZoom={15}
                                 mapId={MAP_ID}
                                 disableDefaultUI={true}
-                                zoomControl={true}
-                                mapTypeControl={true}
-                                mapTypeControlOptions={MAP_TYPE_CONTROL_OPTIONS}
-                                zoomControlOptions={ZOOM_CONTROL_OPTIONS}
+                                zoomControl={false}
+                                mapTypeControl={false}
                                 gestureHandling={'greedy'}
                                 reuseMaps={true}
                                 onCameraChanged={(ev) => {
                                     if (!destination) {
                                         setIsCalculatingEta(true);
-                                        // Debounce state update to prevent re-renders while dragging
                                         const cleanup = setTimeout(() => {
                                             setPickupLocation(ev.detail.center);
-                                            // The effect will handle setIsCalculatingEta(false) after fetch
                                         }, 100);
-                                        // Store timeout ID to clear on next move (simple debounce closure)
-                                        // Actually, we need a ref for this to work across renders if we were re-rendering. 
-                                        // But since we are NOT setting state here immediately, this component instance persists.
-                                        // We need a ref to hold the timeout.
                                         if ((window as any)._mapDebounce) clearTimeout((window as any)._mapDebounce);
                                         (window as any)._mapDebounce = cleanup;
                                     }
@@ -450,13 +435,11 @@ export default function ServiceSelection({ destination: propDestination, onBack,
                                     </AdvancedMarker>
                                 )}
 
-                                {/* Destination Marker & Route (Only if destination selected) */}
+                                {/* Destination Marker & Route */}
                                 {destCoords && (
                                     <>
-                                        {/* Original Pickup Point Marker (Locked) - replaces static pin */}
                                         <AdvancedMarker position={pickupLocation}>
                                             <div className="relative flex flex-col items-center">
-                                                {/* Time Bubble */}
                                                 <div
                                                     className="text-white px-3 py-1.5 rounded-full shadow-lg flex flex-col items-center justify-center min-w-[60px] min-h-[60px] border-[3px] border-white relative overflow-hidden"
                                                     style={{ backgroundColor: THEME.colors.primaryBrandColor }}
@@ -469,25 +452,18 @@ export default function ServiceSelection({ destination: propDestination, onBack,
                                                     </span>
                                                     <span className="text-[10px] font-medium leading-none mt-0.5">min</span>
                                                 </div>
-                                                {/* Stem/Stick */}
                                                 <div className="w-1 h-4" style={{ backgroundColor: THEME.colors.primaryBrandColor }}></div>
-                                                {/* Base Dot */}
                                                 <div className="w-4 h-4 rounded-full bg-white border-[4px] shadow-sm" style={{ borderColor: THEME.colors.primaryBrandColor }}></div>
                                             </div>
                                         </AdvancedMarker>
 
-                                        {/* CUSTOM DESTINATION MARKER (Blue Bubble like image) */}
-                                        {/* CUSTOM DESTINATION MARKER (Blue Bubble like image) */}
                                         <AdvancedMarker position={destCoords} zIndex={20}>
                                             <div className="relative flex flex-col items-center">
-                                                {/* Arrival Bubble */}
                                                 <div className="bg-[#4F46E5] text-white px-3 py-1.5 rounded-full shadow-lg flex flex-col items-center justify-center min-w-[60px] min-h-[60px] border-[3px] border-white">
                                                     <span className="text-[10px] font-bold leading-none mb-0.5">Arrive</span>
                                                     <span className="text-sm font-bold leading-none">{routeInfo ? calculateArrivalTime(routeInfo.duration) : '--:--'}</span>
                                                 </div>
-                                                {/* Stem/Stick */}
                                                 <div className="w-1 h-4 bg-[#4F46E5]"></div>
-                                                {/* Base Dot */}
                                                 <div className="w-4 h-4 rounded-full bg-white border-[4px] border-[#4F46E5] shadow-sm"></div>
                                             </div>
                                         </AdvancedMarker>
@@ -499,15 +475,11 @@ export default function ServiceSelection({ destination: propDestination, onBack,
                                     </>
                                 )}
                             </Map>
-                            {/* Controlled Camera Updates */}
-                            {cameraTarget && <MapControl center={cameraTarget} />}
 
-                            {/* --- STATIC CENTER PIN OVERLAY (The "Bolt" Pin) --- */}
-                            {/* --- STATIC CENTER PIN OVERLAY (Green Bubble like image) --- */}
+                            {/* --- STATIC CENTER PIN OVERLAY --- */}
                             {!destination && (
                                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[calc(100%+8px)] z-10 pointer-events-none">
                                     <div className="relative flex flex-col items-center group">
-                                        {/* Time Bubble */}
                                         <div
                                             className="text-white px-3 py-1.5 rounded-full shadow-lg flex flex-col items-center justify-center min-w-[60px] min-h-[60px] border-[3px] border-white transition-transform duration-200 group-hover:-translate-y-1 relative overflow-hidden"
                                             style={{ backgroundColor: THEME.colors.primaryBrandColor }}
@@ -520,9 +492,7 @@ export default function ServiceSelection({ destination: propDestination, onBack,
                                             </span>
                                             <span className="text-[10px] font-medium leading-none mt-0.5">min</span>
                                         </div>
-                                        {/* Stem/Stick */}
                                         <div className="w-1 h-4" style={{ backgroundColor: THEME.colors.primaryBrandColor }}></div>
-                                        {/* Base Dot */}
                                         <div className="w-4 h-4 rounded-full bg-white border-[4px] shadow-sm" style={{ borderColor: THEME.colors.primaryBrandColor }}></div>
                                     </div>
                                 </div>
@@ -536,94 +506,77 @@ export default function ServiceSelection({ destination: propDestination, onBack,
                             </div>
                         </div>
                     )}
-
-                    {/* HEADER: TRIP SUMMARY vs LEGACY NAV */}
-                    {destination ? (
-                        <TripHeader
-                            pickup={propPickupAddress || pickupAddress || "Current Location"}
-                            destination={(function () {
-                                // CLEAN BUILD: Manual Address Construction
-                                const place = destination;
-                                if (!place) return "Destination";
-
-                                // 1. Extract raw components
-                                const components = place.address_components || [];
-                                const getComponent = (type: string) => components.find(c => c.types.includes(type))?.long_name || '';
-
-                                const streetNum = getComponent('street_number');
-                                const route = getComponent('route'); // This is the Street Name
-                                const city = getComponent('locality') || getComponent('administrative_area_level_1');
-
-                                // 2. Build the string manually
-                                if (route) {
-                                    // Result: "12 Triq Il-Kwartin, Swieqi"
-                                    const part1 = streetNum ? `${streetNum} ${route}` : route;
-                                    return city ? `${part1}, ${city}` : part1;
-                                }
-
-                                // 3. Fallback: Strip the code using Regex from formatted_address
-                                const raw = place.formatted_address || place.name || '';
-                                return raw.replace(/^[A-Z0-9]+\+[A-Z0-9]+\s*,?\s*/, '');
-                            })()}
-                            onClose={() => onBack ? onBack() : navigate('/')}
-                        />
-                    ) : (
-                        /* Legacy Navbar (Overlaid on Map) */
-                        <div
-                            className="absolute top-0 left-0 w-full p-4 z-20 flex items-center justify-between pointer-events-auto shadow-md"
-                            style={{ backgroundColor: THEME.colors.brandNavy }}
-                        >
-                            <Link to="/" className="p-2 rounded-xl bg-white/10 hover:bg-white/20 transition-colors text-white">
-                                <ArrowLeft className="w-5 h-5" />
-                            </Link>
-                            <div className="flex-1 px-4 text-center">
-                                <h1 className="text-xs font-black tracking-[0.3em] uppercase text-white shadow-sm">Pickup Location</h1>
-                            </div>
-                            <button onClick={handleSignOut} className="p-2 rounded-xl bg-white/10 hover:bg-red-500/20 text-white/50 hover:text-red-500 transition-colors">
-                                <LogOut className="w-4 h-4" />
-                            </button>
-                        </div>
-                    )}
-
-                    {/* Locate Button (Moved to float on map) */}
-                    <button
-                        onClick={handleLocateMe}
-                        className={`
-                            absolute bottom-6 right-6 z-20 w-12 h-12 glass-panel rounded-full flex items-center justify-center 
-                            transition-all active:scale-95 shadow-lg border border-white/10 bg-black/80 backdrop-blur-md
-                            ${locating ? 'animate-pulse' : 'hover:text-white'}
-                            ${geoError ? 'border-red-500 text-red-500' : ''}
-                        `}
-                        style={{ color: THEME.colors.primaryBrandColor }}
-                    >
-                        {locating ? <Loader size={24} className="animate-spin" /> : <Crosshair size={24} />}
-                    </button>
                 </div>
+
+                {/* HEADER */}
+                {destination ? (
+                    <TripHeader
+                        pickup={propPickupAddress || pickupAddress || "Current Location"}
+                        destination={(function () {
+                            const place = destination;
+                            if (!place) return "Destination";
+                            const raw = place.formatted_address || place.name || '';
+                            return raw.replace(/^[A-Z0-9]+\+[A-Z0-9]+\s*,?\s*/, '');
+                        })()}
+                        onClose={() => onBack ? onBack() : navigate('/')}
+                    />
+                ) : (
+                    <div
+                        className="absolute top-0 left-0 w-full p-4 z-20 flex items-center justify-between pointer-events-auto shadow-md"
+                        style={{ backgroundColor: THEME.colors.brandNavy }}
+                    >
+                        <Link to="/" className="p-2 rounded-xl bg-white/10 hover:bg-white/20 transition-colors text-white">
+                            <ArrowLeft className="w-5 h-5" />
+                        </Link>
+                        <div className="flex-1 px-4 text-center">
+                            <h1 className="text-xs font-black tracking-[0.3em] uppercase text-white shadow-sm">Pickup Location</h1>
+                        </div>
+                        <button onClick={handleSignOut} className="p-2 rounded-xl bg-white/10 hover:bg-red-500/20 text-white/50 hover:text-red-500 transition-colors">
+                            <LogOut className="w-4 h-4" />
+                        </button>
+                    </div>
+                )}
+
+                {/* Locate Button */}
+                <button
+                    onClick={handleLocateMe}
+                    className={`
+                        absolute right-6 z-20 w-12 h-12 glass-panel rounded-full flex items-center justify-center 
+                        transition-all duration-500 active:scale-95 shadow-lg border border-white/10 bg-black/80 backdrop-blur-md
+                        ${destination ? 'bottom-[56%]' : 'bottom-6'} 
+                        ${locating ? 'animate-pulse' : 'hover:text-white'}
+                        ${geoError ? 'border-red-500 text-red-500' : ''}
+                    `}
+                    style={{ color: THEME.colors.primaryBrandColor }}
+                >
+                    {locating ? <Loader size={24} className="animate-spin" /> : <Crosshair size={24} />}
+                </button>
 
                 {/* --- ADAPTIVE BOTTOM SHEET (Bolt-Style) --- */}
                 {destination && (
                     <>
                         {/* Map Padding Handler: Pushes map content up so it's not hidden by the sheet */}
-                        <MapPaddingHandler bottomPadding={selectedService ? 320 : 280} />
+                        {/* Pass different padding depending on whether we currently have a vehicle selected or not */}
+                        {/* Approx 45%-55% split. Height of sheet is ~55vh or so. 350-400px seems reasonable. */}
+                        <MapPaddingHandler bottomPadding={selectedService ? 380 : 320} />
 
-                        {/* SHEET CONTAINER */}
-                        <div className="absolute bottom-0 left-0 right-0 z-40 bg-white rounded-t-[24px] shadow-[0_-8px_30px_rgba(0,0,0,0.12)] flex flex-col max-h-[60vh] transition-all duration-300 ease-out animate-slide-up">
+                        {/* SHEET CONTAINER - Light Mode White */}
+                        <div className="absolute bottom-0 left-0 right-0 z-40 bg-white rounded-t-[24px] shadow-[0_-8px_30px_rgba(0,0,0,0.1)] flex flex-col h-[60dvh] transition-all duration-300 ease-out animate-slide-up border-t border-slate-100">
 
-                            {/* Drag Handle */}
-                            <div className="w-full flex justify-center pt-3 pb-2 cursor-grab active:cursor-grabbing"
-                                onTouchStart={(e) => { /* Placeholder for drag logic */ }}>
-                                <div className="w-12 h-1.5 bg-slate-200 rounded-full" />
+                            {/* Drag Handle - Solid Neutral Light Orange */}
+                            <div className="w-full flex justify-center pt-3 pb-2 cursor-grab active:cursor-grabbing shrink-0">
+                                <div className="w-10 h-1.5 rounded-full" style={{ backgroundColor: '#F9A825' }} />
                             </div>
 
                             {/* Header: Title & Stats */}
-                            <div className="px-6 pb-4 flex items-center justify-between border-b border-slate-50">
-                                <h3 className="text-sm font-black text-[#1A1C2E] uppercase tracking-widest">
+                            <div className="px-6 pb-4 flex items-center justify-between border-b border-slate-100 shrink-0">
+                                <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">
                                     Select Service
                                 </h3>
                                 {routeInfo && (
                                     <div className="text-right">
-                                        <div className="text-sm font-bold text-[#1A1C2E]">{routeInfo.duration}</div>
-                                        <div className="text-[10px] font-bold text-slate-400 uppercase">{routeInfo.distance}</div>
+                                        <div className="text-sm font-bold text-slate-900">{routeInfo.duration}</div>
+                                        <div className="text-[10px] font-bold text-[#F9A825] uppercase">{routeInfo.distance}</div>
                                     </div>
                                 )}
                             </div>
@@ -638,34 +591,43 @@ export default function ServiceSelection({ destination: propDestination, onBack,
                                         return (
                                             <button
                                                 key={service.id}
-                                                onClick={() => setSelectedService(service.id)}
                                                 className={`
-                                                    w-full relative group flex items-center p-4 rounded-2xl border-2 transition-all duration-200
+                                                    w-full relative group flex items-center p-4 rounded-xl border transition-all duration-200
                                                     ${isSelected
-                                                        ? 'bg-[#FFF8E6] border-[#F9A825] shadow-sm'
-                                                        : 'bg-white border-transparent hover:border-slate-100 hover:bg-slate-50'
+                                                        ? 'bg-white border-[#F9A825]'
+                                                        : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
                                                     }
                                                 `}
+                                                onClick={() => {
+                                                    // console.log("Service Selected:", service.id); 
+                                                    setSelectedService(service.id);
+                                                    // sub-service reset removed as not defined
+                                                }}
                                             >
                                                 {/* Icon Container */}
-                                                <div className={`
-                                                    w-12 h-12 rounded-xl flex items-center justify-center shrink-0 mr-4 transition-colors
-                                                    ${isSelected ? 'bg-[#F9A825] text-[#1A1C2E]' : 'bg-slate-100 text-slate-400'}
-                                                `}>
+                                                <div
+                                                    className={`
+                                                        w-12 h-12 rounded-lg flex items-center justify-center mr-4 shrink-0 transition-colors
+                                                        ${isSelected ? 'text-[#F9A825]' : 'text-slate-400 group-hover:text-slate-600'}
+                                                    `}
+                                                    style={{
+                                                        backgroundColor: isSelected ? '#F9A8251A' : '#F1F5F9'
+                                                    }}
+                                                >
                                                     <Icon size={24} strokeWidth={2} />
                                                 </div>
 
                                                 {/* Text Content */}
                                                 <div className="flex-1 text-left">
                                                     <div className="flex justify-between items-baseline mb-0.5">
-                                                        <span className={`text-base font-black ${isSelected ? 'text-[#1A1C2E]' : 'text-slate-700'}`}>
+                                                        <span className={`text-base font-black ${isSelected ? 'text-slate-900' : 'text-slate-700'}`}>
                                                             {service.name}
                                                         </span>
-                                                        <span className="text-base font-bold text-[#1A1C2E]">
+                                                        <span className="text-base font-bold text-[#F9A825]">
                                                             €{service.base_price}
                                                         </span>
                                                     </div>
-                                                    <p className="text-xs font-medium text-slate-400 leading-snug pr-2">
+                                                    <p className={`text-xs font-medium leading-snug pr-2 ${isSelected ? 'text-slate-500' : 'text-slate-400'}`}>
                                                         {service.description}
                                                     </p>
                                                 </div>
@@ -673,9 +635,9 @@ export default function ServiceSelection({ destination: propDestination, onBack,
                                                 {/* Selection Indicator (Radio Style) */}
                                                 <div className={`
                                                     absolute right-4 w-4 h-4 rounded-full border-2 flex items-center justify-center
-                                                    ${isSelected ? 'border-[#F9A825]' : 'border-slate-200'}
+                                                    ${isSelected ? 'border-[#F9A825]' : 'border-slate-300'}
                                                 `}>
-                                                    {isSelected && <div className="w-2 h-2 rounded-full bg-[#FA9825]" />}
+                                                    {isSelected && <div className="w-2 h-2 rounded-full bg-[#F9A825]" />}
                                                 </div>
                                             </button>
                                         );
@@ -683,35 +645,24 @@ export default function ServiceSelection({ destination: propDestination, onBack,
                                 </div>
                             </div>
 
-                            {/* STICKY FOOTER (Visual Viewport Safe) */}
-                            <div className="absolute bottom-0 left-0 right-0 z-50">
-                                {/* Gradient Fade to mask scrolling content */}
-                                <div className="h-12 w-full bg-gradient-to-t from-white to-transparent pointer-events-none" />
-
-                                <div className="bg-white px-6 pb-6 pt-2">
-                                    <button
-                                        disabled={!selectedService}
-                                        onClick={() => {
-                                            if (!selectedVehicleId) {
-                                                setActiveTab('vehicles');
-                                            } else {
-                                                handleInitialSelect();
-                                            }
-                                        }}
-                                        className={`
-                                            w-full h-14 rounded-xl font-black text-base uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg transition-all active:scale-[0.98]
-                                            ${selectedService
-                                                ? 'bg-[#F9A825] text-[#1A1C2E] hover:brightness-105 shadow-orange-500/20'
-                                                : 'bg-slate-100 text-slate-300 cursor-not-allowed shadow-none'
-                                            }
-                                        `}
-                                    >
-                                        {selectedVehicleId ? 'CONFIRM ORDER' : 'Choose Vehicle'}
-                                        {selectedService && <ArrowLeft className="w-5 h-5 rotate-180" />}
-                                    </button>
-                                </div>
-                            </div>
-
+                            {/* RESTORED BUTTON SECTION (Sticky Footer) */}
+                            <section className="absolute bottom-0 left-0 right-0 z-[50] bg-white border-t border-gray-100 p-4 space-y-4">
+                                <button
+                                    onClick={handleFinalSubmit}
+                                    disabled={!selectedService}
+                                    className={`
+                                        w-full py-4 text-base font-bold uppercase tracking-widest rounded-xl transition-all shadow-none
+                                        flex items-center justify-center gap-2
+                                        ${selectedService
+                                            ? 'bg-[#F9A825] text-white hover:opacity-90 active:scale-[0.98]'
+                                            : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                                        }
+                                    `}
+                                >
+                                    {selectedVehicleId ? 'CONFIRM SERVICE REQUEST' : 'Choose Vehicle'}
+                                    {selectedService && <ArrowLeft className="w-5 h-5 rotate-180" />}
+                                </button>
+                            </section>
                         </div>
                     </>
                 )}
@@ -734,7 +685,7 @@ export default function ServiceSelection({ destination: propDestination, onBack,
 
                 {showDestinationModal && (
                     <div className="absolute inset-0 z-50 flex flex-col justify-end sm:justify-center pointer-events-none">
-                        {/* Backdrop - Transparent to see map clearly (Task 6) */}
+                        {/* Backdrop - Transparent to see map clearly */}
                         <div
                             className="absolute inset-0 bg-transparent pointer-events-auto transition-opacity"
                             onClick={() => setShowDestinationModal(false)}
@@ -742,7 +693,6 @@ export default function ServiceSelection({ destination: propDestination, onBack,
 
                         <div className="w-full sm:max-w-lg mx-auto bg-white p-6 rounded-t-[32px] sm:rounded-3xl border-t sm:border border-slate-100 shadow-2xl relative pointer-events-auto animate-slide-up sm:animate-fade-in group pb-10 sm:pb-6 max-h-[40vh] overflow-y-auto">
 
-                            {/* Drag Handle (Mobile) */}
                             {/* Drag Handle (Mobile) */}
                             <div className="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-6 sm:hidden" />
                             <button
@@ -789,7 +739,7 @@ export default function ServiceSelection({ destination: propDestination, onBack,
                                         )}
                                     </div>
 
-                                    {/* Pickup Optimization Info (Task 3 Placeholder - to be real data soon) */}
+                                    {/* Pickup Optimization Info */}
                                     <div className="px-4 py-3 bg-blue-50 rounded-xl border border-blue-100 flex items-center gap-3">
                                         <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
                                             <Clock size={16} />

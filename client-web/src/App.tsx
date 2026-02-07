@@ -72,8 +72,8 @@ function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <div className="min-h-screen text-white relative bg-black font-sans">
-          <div className="max-w-md mx-auto min-h-screen relative overflow-hidden bg-black shadow-2xl border-x border-white/5">
+        <div className="min-h-screen w-full flex flex-col items-center justify-center bg-white font-sans overflow-x-hidden text-slate-900">
+          <div className="w-full max-w-md h-full min-h-[100dvh] relative flex flex-col bg-white shadow-2xl border-x border-slate-100 font-sans">
             <SuspensionWatcher>
               <Suspense fallback={<LoadingScreen />}>
                 <Routes>

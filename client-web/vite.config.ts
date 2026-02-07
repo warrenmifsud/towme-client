@@ -6,12 +6,9 @@ import basicSsl from '@vitejs/plugin-basic-ssl'
 export default defineConfig({
   plugins: [react(), basicSsl()],
   server: {
-    port: 5175,
+    port: 5173,
     strictPort: true,
-    host: '192.168.7.49',
-    hmr: {
-      host: '192.168.7.49',
-    },
+    host: true, // Listen on all addresses
   },
   build: {
     rollupOptions: {
