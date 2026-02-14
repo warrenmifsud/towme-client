@@ -60,11 +60,12 @@ function PickupAddressDisplay({ address, onAddressChange }: { address: string, o
 }
 
 import ServiceSelection from './ServiceSelection';
+import LanaChat from '../components/LanaChat';
 
 export default function Home() {
     const { user } = useAuth();
     const navigate = useNavigate();
-    const [viewMode, setViewMode] = useState<'MENU' | 'INPUT' | 'MAP'>('MENU');
+    const [viewMode, setViewMode] = useState<'MENU' | 'INPUT' | 'LANA' | 'MAP'>('MENU');
     const [destination, setDestination] = useState<google.maps.places.PlaceResult | null>(null);
     const [selectedCategory, setSelectedCategory] = useState<string>('');
     const [pickupAddress, setPickupAddress] = useState<string>('');
@@ -211,7 +212,7 @@ export default function Home() {
                 }
             }
             setDestination(place);
-            setViewMode('MAP');
+            setViewMode('LANA');
             // navigate('/services', { state: { destination: place } }); // OLD LOGIC
         }
     };
@@ -393,6 +394,24 @@ export default function Home() {
                                 <p className="mt-6 text-center text-xs text-slate-400 font-medium">
                                     We'll calculate the best route for your tow.
                                 </p>
+                            </div>
+                        </div>
+                    )
+                }
+
+                {/* LANA CHAT VIEW */}
+                {
+                    viewMode === 'LANA' && (
+                        <div className="absolute inset-0 z-50 animate-slide-up bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center p-4">
+                            <div className="w-full max-w-md h-[80vh] sm:h-[600px]">
+                                <LanaChat
+                                    onComplete={(vehicleData) => {
+                                        console.log("LANA Handover:", vehicleData);
+                                        // Pass data to ServiceSelection via state or context (Mock for now)
+                                        setViewMode('MAP');
+                                    }}
+                                    onCancel={() => setViewMode('MENU')}
+                                />
                             </div>
                         </div>
                     )

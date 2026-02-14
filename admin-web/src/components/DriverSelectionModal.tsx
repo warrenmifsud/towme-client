@@ -46,10 +46,10 @@ export function DriverSelectionModal({ isOpen, onClose, drivers, onSelectDriver,
             <div className="glass-panel border border-white/10 rounded-2xl w-full max-w-md shadow-2xl relative overflow-hidden flex flex-col max-h-[80vh]">
 
                 {/* Header */}
-                <div className="p-4 border-b border-white/10 bg-gradient-to-r from-amber-500/10 to-transparent flex justify-between items-center">
+                <div className="p-4 border-b border-white/10 bg-gradient-to-r from-[#F9A825]/10 to-transparent flex justify-between items-center">
                     <div>
                         <h3 className="text-lg font-bold text-theme-primary flex items-center gap-2">
-                            <Truck className="text-amber-500" size={20} />
+                            <Truck className="text-[#F9A825]" size={20} />
                             Dispatch Override
                         </h3>
                         <p className="text-xs text-theme-secondary">Manually assign a driver to this job.</p>
@@ -69,12 +69,12 @@ export function DriverSelectionModal({ isOpen, onClose, drivers, onSelectDriver,
                                 disabled={!driver.is_online}
                                 onClick={() => onSelectDriver(driver.driver_id)}
                                 className={`w-full p-3 rounded-xl border flex items-center justify-between group transition-all ${driver.is_online
-                                    ? 'bg-white/5 border-white/5 hover:bg-amber-500/10 hover:border-amber-500/30 cursor-pointer'
+                                    ? 'bg-white/5 border-white/5 hover:bg-[#F9A825]/10 hover:border-[#F9A825]/30 cursor-pointer'
                                     : 'bg-black/20 border-transparent opacity-50 cursor-not-allowed'
                                     }`}
                             >
                                 <div className="flex items-center gap-3">
-                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold surface-inner ${driver.is_online ? 'text-orange-500' : 'text-slate-600'
+                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold surface-inner ${driver.is_online ? 'text-[#F9A825]' : 'text-slate-600'
                                         }`}>
                                         <User size={18} />
                                     </div>
@@ -95,7 +95,7 @@ export function DriverSelectionModal({ isOpen, onClose, drivers, onSelectDriver,
                                 </div>
 
                                 {driver.is_online && (
-                                    <div className="opacity-0 group-hover:opacity-100 transition-opacity text-amber-500">
+                                    <div className="opacity-0 group-hover:opacity-100 transition-opacity text-[#F9A825]">
                                         <CheckCircle2 size={20} />
                                     </div>
                                 )}

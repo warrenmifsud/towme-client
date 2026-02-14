@@ -39,8 +39,8 @@ export default function GlassDropdown({ value, onChange, options }: GlassDropdow
     const getColorClasses = (color: string, isSelected: boolean = false) => {
         const colorMap = {
             amber: isSelected
-                ? 'bg-amber-500/10 border-amber-500/30 text-amber-400'
-                : 'text-amber-500',
+                ? 'bg-[#F9A825]/10 border-[#F9A825]/30 text-[#F9A825]'
+                : 'text-[#F9A825]',
             blue: isSelected
                 ? 'bg-blue-500/10 border-blue-500/30 text-blue-400'
                 : 'text-blue-500',
@@ -64,7 +64,7 @@ export default function GlassDropdown({ value, onChange, options }: GlassDropdow
             {/* Trigger Button */}
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className={`surface-inner px-4 py-2 text-xs font-black uppercase tracking-wide focus:outline-none focus:ring-2 focus:ring-orange-500/10 cursor-pointer transition-all flex items-center gap-2 ${selectedOption ? getColorClasses(selectedOption.color) : 'border-white/10 text-theme-secondary'
+                className={`surface-inner px-4 py-2 text-xs font-black uppercase tracking-wide focus:outline-none focus:ring-2 focus:ring-[#F9A825]/10 cursor-pointer transition-all flex items-center gap-2 ${selectedOption ? getColorClasses(selectedOption.color) : 'border-white/10 text-theme-secondary'
                     }`}
             >
                 {selectedOption?.label || 'Select Status'}

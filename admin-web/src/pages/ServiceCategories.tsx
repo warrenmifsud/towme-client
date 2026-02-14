@@ -1,11 +1,12 @@
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../lib/supabase';
-import { Plus, Trash2, Edit2, Calendar, ChevronLeft, ChevronRight, Eye, EyeOff } from 'lucide-react';
+import { Plus, Trash2, Edit2, Calendar, ChevronLeft, ChevronRight, Eye, EyeOff, Zap, Shield, Clock, Bot } from 'lucide-react';
 import {
     CarIcon, SuvIcon, MotorcycleIcon, VanIcon, MediumVanIcon, BoxVanIcon,
     LutonVanIcon, GarageIcon, VintageCarIcon, BatteryJumpIcon,
     BatteryReplacementIcon
 } from '../components/ServiceIcons';
+import BRAND_SETTINGS from '../config/brand_settings.json';
 
 interface Category {
     id: string;
@@ -14,6 +15,19 @@ interface Category {
     description: string;
     icon_name: string;
     is_active: boolean;
+    surge_multiplier: number;
+    surge_authorized_by: string | null;
+    surge_updated_at: string | null;
+}
+
+interface SurgeAuditEntry {
+    id: string;
+    service_id: string;
+    service_name: string;
+    old_multiplier: number;
+    new_multiplier: number;
+    authorized_by: string;
+    applied_at: string;
 }
 
 interface PriceSchedule {
@@ -248,9 +262,14 @@ export default function ServiceCategories() {
     const [schedules, setSchedules] = useState<PriceSchedule[]>([]);
     const [editingSchedule, setEditingSchedule] = useState<PriceSchedule | null>(null);
 
+    // Surge State
+    const [surgeAuditLog, setSurgeAuditLog] = useState<SurgeAuditEntry[]>([]);
+    const [surgeSaving, setSurgeSaving] = useState<string | null>(null);
+
     useEffect(() => {
         fetchCategories();
         fetchSchedules();
+        fetchSurgeAuditLog();
     }, []);
 
     async function fetchSchedules() {
@@ -264,6 +283,51 @@ export default function ServiceCategories() {
         } catch (err) {
             console.error('Error fetching schedules:', err);
         }
+    }
+
+    async function fetchSurgeAuditLog() {
+        try {
+            const { data, error } = await supabase
+                .from('surge_audit_log')
+                .select('*')
+                .order('applied_at', { ascending: false })
+                .limit(50);
+            if (error) throw error;
+            setSurgeAuditLog(data || []);
+        } catch (err) {
+            console.error('Error fetching surge audit log:', err);
+        }
+    }
+
+    async function handleSurgeUpdate(categoryId: string, newMultiplier: number) {
+        try {
+            setSurgeSaving(categoryId);
+            const { data: { user } } = await supabase.auth.getUser();
+            const authorizedBy = user?.email || 'UNKNOWN';
+
+            const { error } = await supabase
+                .from('service_categories')
+                .update({
+                    surge_multiplier: newMultiplier,
+                    surge_authorized_by: authorizedBy
+                })
+                .eq('id', categoryId);
+
+            if (error) throw error;
+
+            fetchCategories();
+            fetchSurgeAuditLog();
+        } catch (err: any) {
+            console.error('Error updating surge:', err);
+            alert(`Surge update failed: ${err.message || JSON.stringify(err)}`);
+        } finally {
+            setSurgeSaving(null);
+        }
+    }
+
+    async function handleSurgeReset(categoryId: string) {
+        if (!confirm('Reset surge multiplier to 1.0x (no surge)?')) return;
+        await handleSurgeUpdate(categoryId, 1.0);
     }
 
     async function fetchCategories() {
@@ -610,14 +674,24 @@ export default function ServiceCategories() {
                         const futureSchedule = !activeSchedule ? serviceSchedules.find(s => new Date(s.start_time) > new Date()) : null;
 
                         return (
-                            <div key={cat.id} className="glass-panel p-6 group relative overflow-hidden">
+                            <div key={cat.id} className={`glass-panel p-6 group relative overflow-hidden ${(cat.surge_multiplier || 1) > 1 ? 'border-[#F9A825]/30 shadow-[#F9A825]/5 shadow-lg' : ''}`}>
+                                {(cat.surge_multiplier || 1) > 1 && (
+                                    <div className={`absolute top-0 left-0 text-[10px] font-bold px-3 py-1 rounded-br-xl border-r border-b flex items-center gap-1 ${cat.surge_authorized_by === 'ATLAS_AUTO'
+                                            ? 'bg-blue-500/20 text-blue-300 border-blue-500/30'
+                                            : 'bg-[#F9A825]/20 text-[#F9A825] border-[#F9A825]/30'
+                                        }`}>
+                                        {cat.surge_authorized_by === 'ATLAS_AUTO'
+                                            ? <><Bot size={10} /> ATLAS {(cat.surge_multiplier || 1).toFixed(1)}x</>
+                                            : <><Zap size={10} className="fill-[#F9A825]" /> {BRAND_SETTINGS.financials.surge_label} {(cat.surge_multiplier || 1).toFixed(1)}x</>}
+                                    </div>
+                                )}
                                 {activeSchedule && (
                                     <div className="absolute top-0 right-0 bg-purple-500/20 text-purple-300 text-[10px] font-bold px-3 py-1 rounded-bl-xl border-l border-b border-purple-500/30 flex items-center gap-1">
                                         <div className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />
                                         LIVE {activeSchedule.percentage > 0 ? '+' : ''}{activeSchedule.percentage}%
                                     </div>
                                 )}
-                                {futureSchedule && !activeSchedule && (
+                                {futureSchedule && !activeSchedule && !(cat.surge_multiplier > 1) && (
                                     <div className="absolute top-0 right-0 bg-blue-500/10 text-blue-300 text-[10px] font-bold px-3 py-1 rounded-bl-xl border-l border-b border-blue-500/20 flex items-center gap-1">
                                         UPCOMING
                                     </div>
@@ -658,13 +732,64 @@ export default function ServiceCategories() {
                                             <>
                                                 <div className="text-[10px] text-muted line-through">€{cat.base_price}</div>
                                                 <div className="text-purple-400 font-mono text-lg font-bold">
-                                                    €{(cat.base_price * (1 + activeSchedule.percentage / 100)).toFixed(2)}
+                                                    €{(cat.base_price * (cat.surge_multiplier || 1) * (1 + activeSchedule.percentage / 100)).toFixed(2)}
                                                 </div>
                                             </>
                                         ) : (
-                                            <span className="text-green-400 font-mono text-lg">€{cat.base_price}</span>
+                                            <span className="text-green-400 font-mono text-lg">
+                                                €{(cat.base_price * (cat.surge_multiplier || 1)).toFixed(2)}
+                                            </span>
                                         )}
                                     </div>
+                                </div>
+
+                                {/* Surge Multiplier Control */}
+                                <div className="mt-3 pt-3 border-t border-white/5">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1">
+                                            <Zap size={12} className={(cat.surge_multiplier || 1) > 1 ? 'text-[#F9A825]' : 'text-gray-500'} />
+                                            Surge
+                                        </span>
+                                        <span className={`text-sm font-mono font-bold ${(cat.surge_multiplier || 1) > 1 ? 'text-[#F9A825]' : 'text-gray-500'}`}>
+                                            {(cat.surge_multiplier || 1).toFixed(1)}x
+                                        </span>
+                                    </div>
+                                    <input
+                                        type="range"
+                                        min={BRAND_SETTINGS.financials.min_surge_multiplier}
+                                        max={BRAND_SETTINGS.financials.max_surge_multiplier}
+                                        step="0.1"
+                                        value={cat.surge_multiplier || 1}
+                                        onChange={(e) => handleSurgeUpdate(cat.id, parseFloat(e.target.value))}
+                                        disabled={surgeSaving === cat.id}
+                                        className="w-full h-1.5 rounded-full appearance-none cursor-pointer"
+                                        style={{
+                                            background: `linear-gradient(to right, #6b7280 0%, #F9A825 ${(((cat.surge_multiplier || 1) - 1) / 2) * 100}%, #374151 ${(((cat.surge_multiplier || 1) - 1) / 2) * 100}%)`,
+                                            accentColor: '#F9A825'
+                                        }}
+                                    />
+                                    <div className="flex justify-between items-center mt-1">
+                                        <span className="text-[9px] text-gray-600">1.0x</span>
+                                        {(cat.surge_multiplier || 1) > 1 && (
+                                            <button
+                                                onClick={() => handleSurgeReset(cat.id)}
+                                                className="text-[9px] text-[#F9A825] hover:text-white transition-colors"
+                                            >
+                                                RESET
+                                            </button>
+                                        )}
+                                        <span className="text-[9px] text-gray-600">{BRAND_SETTINGS.financials.max_surge_multiplier}x</span>
+                                    </div>
+                                    {(cat.surge_multiplier || 1) > 1 && cat.surge_authorized_by && (
+                                        <div className={`mt-2 text-[9px] flex items-center gap-1 ${cat.surge_authorized_by === 'ATLAS_AUTO'
+                                                ? 'text-blue-400/70'
+                                                : 'text-[#F9A825]/70'
+                                            }`}>
+                                            {cat.surge_authorized_by === 'ATLAS_AUTO'
+                                                ? <><Bot size={9} /> Atlas Auto-Surge</>
+                                                : <><Shield size={9} /> {cat.surge_authorized_by}</>}
+                                        </div>
+                                    )}
                                 </div>
 
                                 {(activeSchedule || futureSchedule) && (
@@ -918,18 +1043,60 @@ export default function ServiceCategories() {
                                         setSchedulePercent('');
                                         setSelectedServices([]);
                                     }}
-                                    className="px-4 py-2 rounded-lg font-medium transition-colors bg-orange-500 hover:bg-orange-600 text-white shadow-lg shadow-orange-500/20 flex-1"
+                                    className="px-4 py-2 rounded-lg font-medium transition-colors bg-[#F9A825] hover:bg-[#e0961f] text-white shadow-lg shadow-[#F9A825]/20 flex-1"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     type="submit"
-                                    className="glass-button flex-1 shadow-lg shadow-orange-500/20"
+                                    className="glass-button flex-1 shadow-lg shadow-[#F9A825]/20"
                                 >
                                     Create Schedule
                                 </button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Surge Audit Log Panel */}
+            {surgeAuditLog.length > 0 && (
+                <div className="glass-panel p-6 border-[#F9A825]/20 bg-[#F9A825]/5">
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-bold text-theme-primary flex items-center gap-2">
+                            <Shield size={20} className="text-[#F9A825]" />
+                            Surge Audit Log
+                        </h3>
+                        <span className="text-xs text-gray-500">{surgeAuditLog.length} entries</span>
+                    </div>
+                    <div className="space-y-2 max-h-[300px] overflow-y-auto custom-scrollbar">
+                        {surgeAuditLog.map(entry => (
+                            <div key={entry.id} className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 hover:border-[#F9A825]/20 transition-all text-sm">
+                                <div className="flex items-center gap-3">
+                                    <Zap size={14} className="text-[#F9A825]" />
+                                    <div>
+                                        <span className="text-theme-primary font-bold">{entry.service_name}</span>
+                                        <div className="text-[10px] text-gray-500 flex items-center gap-1 mt-0.5">
+                                            <Clock size={9} />
+                                            {new Date(entry.applied_at).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <div className="text-right">
+                                        <div className="font-mono text-xs">
+                                            <span className="text-gray-500">{entry.old_multiplier.toFixed(1)}x</span>
+                                            <span className="text-gray-600 mx-1">→</span>
+                                            <span className={`font-bold ${entry.new_multiplier > 1 ? 'text-[#F9A825]' : 'text-green-400'}`}>{entry.new_multiplier.toFixed(1)}x</span>
+                                        </div>
+                                        <div className="text-[9px] text-gray-600 mt-0.5">
+                                            <Shield size={8} className="inline mr-1" />
+                                            {entry.authorized_by}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 </div>
             )}

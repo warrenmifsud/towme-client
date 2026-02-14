@@ -1,0 +1,15 @@
+{
+    "brand": {
+        "colors": {
+            "primary": "#F9A825",
+            "secondary": "#1A1C2E"
+        }
+    },
+    "financials": {
+        "commission_rate": 0.15,
+        "tax_rate": 0.0
+    },
+    "features": {
+        "NEW_ERA_ENABLED": true
+    }
+}

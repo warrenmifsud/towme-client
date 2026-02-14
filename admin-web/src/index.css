@@ -29,16 +29,16 @@
 
   /* Ambient Background (Dark) */
   --bg-gradient:
-    radial-gradient(circle at 50% 0%, rgba(245, 158, 11, 0.15), transparent 40%),
+    radial-gradient(circle at 50% 0%, rgba(249, 168, 37, 0.15), transparent 40%),
     radial-gradient(circle at 100% 100%, rgba(234, 179, 8, 0.1), transparent 30%);
 
   /* Accent Colors (Gold/Amber for Dark Mode) */
-  --accent-primary: #f59e0b;
+  --accent-primary: #F9A825;
   /* amber-500 */
-  --accent-secondary: #ca8a04;
+  --accent-secondary: #F57F17;
   /* yellow-600 */
-  --accent-gradient: linear-gradient(to right, #f59e0b, #ca8a04);
-  --accent-glow: rgba(245, 158, 11, 0.4);
+  --accent-gradient: linear-gradient(to right, #F9A825, #F57F17);
+  --accent-glow: rgba(249, 168, 37, 0.4);
 
   /* ========================================
      DEPTH SYSTEM - White-Based Glass Layers
@@ -98,17 +98,17 @@
   /* Ambient Background (Liquid/MacOS style) */
   --bg-gradient:
     radial-gradient(at 0% 0%, rgba(255, 255, 255, 1) 0%, transparent 50%),
-    radial-gradient(at 50% 0%, rgba(249, 115, 22, 0.15), transparent 50%),
+    radial-gradient(at 50% 0%, rgba(249, 168, 37, 0.15), transparent 50%),
     /* Orange tint */
     radial-gradient(at 100% 100%, rgba(255, 247, 237, 1) 0%, transparent 50%);
 
   /* Accent Colors (Professional Orange for Liquid Mode) */
-  --accent-primary: #f97316;
+  --accent-primary: #F9A825;
   /* orange-500 */
-  --accent-secondary: #ea580c;
+  --accent-secondary: #F57F17;
   /* orange-600 */
-  --accent-gradient: linear-gradient(to right, #f97316, #ea580c);
-  --accent-glow: rgba(249, 115, 22, 0.4);
+  --accent-gradient: linear-gradient(to right, #F9A825, #F57F17);
+  --accent-glow: rgba(249, 168, 37, 0.4);
 
   /* ========================================
      DEPTH SYSTEM - Prevents "Black Hole" Effects
@@ -152,6 +152,18 @@ body {
   transition: background 0.5s ease, color 0.3s ease;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* --- DIRECT ENFORCEMENT ORDER: GLOBAL INPUT FOCUS --- */
+/* --- DIRECT ENFORCEMENT ORDER: GLOBAL INPUT FOCUS --- */
+/* --- DIRECT ENFORCEMENT ORDER: GLOBAL INPUT FOCUS --- */
+input:focus,
+textarea:focus,
+select:focus,
+button:focus {
+  outline: none !important;
+  border: 2px solid #F9A825 !important;
+  box-shadow: none !important;
 }
 
 @layer components {
@@ -435,6 +447,6 @@ body {
   }
 
   ::-webkit-scrollbar-thumb {
-    @apply bg-white/10 rounded-full hover:bg-amber-500/50 transition-colors;
+    @apply bg-white/10 rounded-full hover:bg-[#F9A825]/50 transition-colors;
   }
 }

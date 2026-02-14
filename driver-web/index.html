@@ -10,6 +10,13 @@
 
 <body class="bg-slate-950 text-white selection:bg-blue-500/30">
     <div id="root"></div>
+    <script>
+        // FORENSIC CAPTURE: Preserve URL hash BEFORE any ES module loads.
+        // Supabase's createClient() auto-detects and consumes hash fragments
+        // (#error=...&error_description=...) during initialization.
+        // This inline script runs synchronously before all modules.
+        window.__AUTH_HASH__ = window.location.hash || '';
+    </script>
     <script type="module" src="/src/main.tsx"></script>
 </body>
 

@@ -9,3 +9,15 @@ dist/
 scripts/venv/
 venv/
 __pycache__/
+
+# Local Netlify folder
+.netlify
+
+# Diagnostic temp files
+diagnosis_output*.txt
+verify_output*.txt
+verify_deletion_output.txt
+diagnose_applications.ts
+inspect_schema.ts
+verify_soul_injection.ts
+*.tsbuildinfo

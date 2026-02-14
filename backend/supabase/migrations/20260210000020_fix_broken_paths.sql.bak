@@ -1,0 +1,7 @@
+UPDATE driver_applications 
+SET 
+  id_card_front_path = 'driver_documents/5qlrqet5j16_1770729591635.png',
+  id_card_back_path = 'driver_documents/1kxv8wsgb7t_1770729593409.png',
+  driving_license_front_path = 'driver_documents/s63m1d69o3b_1770729595955.JPG',
+  driving_license_back_path = 'driver_documents/6rsxiwjjg18_1770729598411.JPG'
+WHERE email = 'warrenmifsud@gmail.com';

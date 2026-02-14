@@ -287,7 +287,7 @@ export default function Clients() {
                                                 ) : (
                                                     <button
                                                         onClick={() => handleSuspendClick(client)}
-                                                        className="p-2 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 transition-colors"
+                                                        className="p-2 rounded-lg bg-[#F9A825]/10 hover:bg-[#F9A825]/20 text-[#F9A825] transition-colors"
                                                         title="Suspend Account"
                                                         disabled={processing}
                                                     >
@@ -358,7 +358,7 @@ export default function Clients() {
                                         <span className={suspensionDate ? "text-theme-primary" : "text-theme-secondary"}>
                                             {suspensionDate ? formatDate(suspensionDate) : "DD Mon YYYY"}
                                         </span>
-                                        <Calendar size={18} className="text-amber-500/50" />
+                                        <Calendar size={18} className="text-[#F9A825]/50" />
                                     </div>
                                 </div>
                                 <p className="text-xs text-slate-500 mt-1">Access will be automatically restored after this date.</p>

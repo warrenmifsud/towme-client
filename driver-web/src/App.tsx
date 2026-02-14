@@ -2,6 +2,9 @@ import { useState, useEffect, useRef } from 'react';
 import { supabase } from './lib/supabase';
 import { Power, Truck, Bell, Settings, MapPin, CheckCircle2, ChevronRight, Loader2, LogOut, ShieldCheck, Mail, Lock, AlertCircle, X, Building2, User, Navigation, Clock, Zap, Menu, Crosshair, Volume2, VolumeX, Upload, FileText, Download, Calendar, Phone } from 'lucide-react';
 import { APIProvider, Map, Marker, useMap } from '@vis.gl/react-google-maps';
+import RegistrationV2 from './modules/RegistrationV2';
+import VehicleProfile from './modules/RegistrationV2/components/VehicleProfile';
+import brandSettings from './config/brand_settings.json';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -35,7 +38,7 @@ function DateInput({ value, onChange, label, error, onFocus }: { value: string, 
                     value={d}
                     onChange={e => handleChange('d', parseInt(e.target.value))}
                     onFocus={onFocus}
-                    className={`bg-slate-900 border rounded-lg px-2 py-2 text-xs text-white outline-none appearance-none ${error ? 'border-red-500 focus:border-red-500' : 'border-white/10 focus:border-amber-500'}`}
+                    className={`bg-white border rounded-lg px-2 py-2 text-xs text-slate-900 outline-none appearance-none ${error ? 'border-red-500 focus:border-red-500' : 'border-slate-200 focus:border-amber-500'}`}
                 >
                     {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
                         <option key={day} value={day}>{day}</option>
@@ -44,7 +47,7 @@ function DateInput({ value, onChange, label, error, onFocus }: { value: string, 
                 <select
                     value={m}
                     onChange={e => handleChange('m', parseInt(e.target.value))}
-                    className={`bg-slate-900 border rounded-lg px-2 py-2 text-xs text-white outline-none appearance-none ${error ? 'border-red-500 focus:border-red-500' : 'border-white/10 focus:border-amber-500'}`}
+                    className={`bg-white border rounded-lg px-2 py-2 text-xs text-slate-900 outline-none appearance-none ${error ? 'border-red-500 focus:border-red-500' : 'border-slate-200 focus:border-amber-500'}`}
                 >
                     {MONTHS.map((month, i) => (
                         <option key={month} value={i + 1}>{month}</option>
@@ -53,7 +56,7 @@ function DateInput({ value, onChange, label, error, onFocus }: { value: string, 
                 <select
                     value={y}
                     onChange={e => handleChange('y', parseInt(e.target.value))}
-                    className={`bg-slate-900 border rounded-lg px-2 py-2 text-xs text-white outline-none appearance-none ${error ? 'border-red-500 focus:border-red-500' : 'border-white/10 focus:border-amber-500'}`}
+                    className={`bg-white border rounded-lg px-2 py-2 text-xs text-slate-900 outline-none appearance-none ${error ? 'border-red-500 focus:border-red-500' : 'border-slate-200 focus:border-amber-500'}`}
                 >
                     {years.map(year => (
                         <option key={year} value={year}>{year}</option>
@@ -234,6 +237,41 @@ export default function App() {
     const [newPassword, setNewPassword] = useState('');
     const [confirmNewPassword, setConfirmNewPassword] = useState('');
     const [resetLoading, setResetLoading] = useState(false);
+
+    // Forensic Auth Error State (parsed from URL hash on failed invite/magic-link)
+    // Uses a LAZY INITIALIZER to parse the hash SYNCHRONOUSLY on the first render,
+    // BEFORE any useEffect (including initDriver and onAuthStateChange) can fire.
+    // This prevents race conditions with Supabase consuming/overriding the hash.
+    const [authHashError, setAuthHashError] = useState<{
+        error: string;
+        error_code: string;
+        error_description: string;
+        raw_hash: string;
+    } | null>(() => {
+        const hash = ((window as any).__AUTH_HASH__ || '').replace(/^#/, '');
+        if (hash.includes('error=')) {
+            const params = new URLSearchParams(hash);
+            const errorParam = params.get('error');
+            if (errorParam) {
+                const errorCode = params.get('error_code') || 'N/A';
+                const errorDesc = decodeURIComponent(params.get('error_description') || 'No description provided by Supabase');
+                console.error(`[FORENSIC AUTH ERROR] error=${errorParam} code=${errorCode} desc=${errorDesc}`);
+                // DO NOT clear __AUTH_HASH__ here — React StrictMode double-mounts
+                // and the second mount's initializer would read '' and return null.
+                // Clearing happens in the RETURN TO LOGIN click handler.
+                return {
+                    error: errorParam,
+                    error_code: errorCode,
+                    error_description: errorDesc,
+                    raw_hash: hash.substring(0, 120)
+                };
+            }
+        }
+        return null;
+    });
+
+    // New Era State
+    const [showVehicleProfile, setShowVehicleProfile] = useState(false);
 
 
     // Effect: Check for Edit Mode (URL params)
@@ -484,6 +522,13 @@ export default function App() {
 
     // Effect: Initialize Driver & Listen for Password Recovery
     useEffect(() => {
+        // GUARD: If authHashError was detected synchronously in useState initializer,
+        // do NOT proceed with auth initialization — show the error card instead.
+        if (authHashError) {
+            setLoading(false);
+            return;
+        }
+
         initDriver();
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -491,6 +536,15 @@ export default function App() {
                 setShowPasswordReset(true);
             }
             if (event === 'SIGNED_IN' && session) {
+                // METADATA GATE: If driver was invited and hasn't set their password yet,
+                // force the Setup Password screen. This fires regardless of which URL
+                // Supabase redirects to (fixes the /dashboard# bypass).
+                const needsSetup = session.user.user_metadata?.needs_password_setup === true;
+                if (needsSetup || window.location.pathname === '/setup-password') {
+                    setUser(session.user);
+                    setShowPasswordReset(true);
+                    return; // Block dashboard access until password is set
+                }
                 setUser(session.user);
             }
             if (event === 'SIGNED_OUT') {
@@ -670,14 +724,28 @@ export default function App() {
         }
     }
 
+    const [commissionRate, setCommissionRate] = useState<number>(15);
+    const [assetVerified, setAssetVerified] = useState<boolean>(false);
+    const [assetDetails, setAssetDetails] = useState<string>('');
+
     async function initDriver() {
         const { data: { user: authUser } } = await supabase.auth.getUser();
         if (!authUser) {
             setLoading(false);
             return;
         }
+        // METADATA GATE: Intercept invited drivers who haven't set their password.
+        // Works regardless of URL — checks user_metadata.needs_password_setup flag
+        // set by the approve-driver edge function.
+        const needsSetup = authUser.user_metadata?.needs_password_setup === true;
+        if (needsSetup || window.location.pathname === '/setup-password') {
+            setUser(authUser);
+            setShowPasswordReset(true);
+            setLoading(false);
+            return; // Do NOT proceed to dashboard
+        }
         setUser(authUser);
-        const { data: profile } = await supabase.from('profiles').select('driver_categories').eq('id', authUser.id).single();
+        const { data: profile } = await supabase.from('profiles').select('driver_categories, fleet_id').eq('id', authUser.id).single();
         if (profile?.driver_categories && profile.driver_categories.length > 0) {
             const { data: cats } = await supabase.from('service_categories').select('id, name').in('id', profile.driver_categories);
             setAssignedCategories(cats || []);
@@ -686,7 +754,43 @@ export default function App() {
         if (status) {
             setIsOnline(status.is_online);
             setActiveCategories(status.active_categories || []);
+            if (status.partner_commission_rate) setCommissionRate(status.partner_commission_rate);
         }
+
+        // Fetch Asset Verification Status
+        if (profile?.fleet_id) {
+            const { data: assets } = await supabase.from('fleet_assets').select('is_verified, license_plate').eq('fleet_id', profile.fleet_id);
+            if (assets && assets.length > 0) {
+                // Assuming single driver/single asset for now, or check assignment
+                const myAsset = assets[0];
+                setAssetVerified(myAsset.is_verified);
+                setAssetDetails(myAsset.license_plate);
+            }
+        }
+
+        // Vehicle Profile Check (Patch)
+        if (brandSettings.features.NEW_ERA_ENABLED) {
+            try {
+                // Check if we have a vehicle registered
+                // Using 'tow_truck_registration_plate' as an indicator of completion
+                const { data: appData } = await supabase
+                    .from('driver_applications')
+                    .select('tow_truck_registration_plate')
+                    .eq('email', authUser.email)
+                    .order('created_at', { ascending: false })
+                    .limit(1)
+                    .single();
+
+                // If no app data, or pending plate, show modal
+                if (!appData || !appData.tow_truck_registration_plate || appData.tow_truck_registration_plate === 'PENDING') {
+                    console.log("Incomplete Vehicle Profile Detected");
+                    setShowVehicleProfile(true);
+                }
+            } catch (e) {
+                console.warn("Vehicle Profile Check Failed", e);
+            }
+        }
+
         setLoading(false);
     }
 
@@ -1064,54 +1168,232 @@ export default function App() {
         </div>
     );
 
-    // Intercept: Password Reset Modal
-    if (showPasswordReset) return (
-        <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 text-white font-sans relative overflow-hidden">
-            <div className="w-full max-w-sm relative z-10 animate-slide-up">
-                <div className="text-center mb-10">
-                    <h1 className="text-3xl font-black tracking-tighter text-white mb-2">Setup Password</h1>
-                    <p className="text-gray-400 text-xs">Secure your account to continue.</p>
+    // FORENSIC INTERCEPT: Auth Hash Error Card
+    // Renders when Supabase redirects with #error= in the URL (expired/invalid token)
+    if (authHashError) return (
+        <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 text-slate-900 font-sans relative overflow-hidden">
+            {/* Visual Law Header Bar */}
+            <div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: '4px', background: '#F9A825', zIndex: 50 }} />
+
+            <div className="w-full max-w-md relative z-10">
+                {/* Brand Logo */}
+                <div className="flex flex-col items-center mb-6">
+                    <div style={{
+                        width: 64, height: 64, borderRadius: '50%', background: '#1A1C2E',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        marginBottom: 16, boxShadow: '0 4px 20px rgba(26,28,46,0.3)'
+                    }}>
+                        <span style={{ color: '#F9A825', fontWeight: 900, fontSize: 22 }}>T</span>
+                    </div>
+                    <h1 style={{ fontSize: 22, fontWeight: 900, letterSpacing: '-0.02em', color: '#1A1C2E', marginBottom: 4 }}>
+                        Access Denied
+                    </h1>
+                    <p style={{ color: '#888', fontSize: 11, letterSpacing: '0.05em', textTransform: 'uppercase' as const }}>
+                        Authentication Link Failed
+                    </p>
                 </div>
 
-                <div className="glass-panel p-1 rounded-[2rem] bg-slate-900/95 border border-white/10">
+                {/* Forensic Error Card */}
+                <div style={{
+                    background: '#fff', border: '2px solid #F9A825', borderRadius: 20,
+                    padding: 24, boxShadow: '0 4px 24px rgba(249,168,37,0.12)'
+                }}>
+                    {/* Error Type */}
+                    <div style={{ marginBottom: 16 }}>
+                        <label style={{
+                            fontSize: 9, fontWeight: 900, textTransform: 'uppercase' as const,
+                            letterSpacing: '0.2em', color: '#999', display: 'block', marginBottom: 4
+                        }}>Error</label>
+                        <p style={{ fontSize: 15, fontWeight: 800, color: '#DC2626' }}>
+                            {authHashError.error}
+                        </p>
+                    </div>
+
+                    {/* Error Code */}
+                    <div style={{ marginBottom: 16 }}>
+                        <label style={{
+                            fontSize: 9, fontWeight: 900, textTransform: 'uppercase' as const,
+                            letterSpacing: '0.2em', color: '#999', display: 'block', marginBottom: 4
+                        }}>Error Code</label>
+                        <p style={{ fontSize: 15, fontWeight: 800, color: '#1A1C2E' }}>
+                            {authHashError.error_code}
+                        </p>
+                    </div>
+
+                    {/* Error Description */}
+                    <div style={{ marginBottom: 16 }}>
+                        <label style={{
+                            fontSize: 9, fontWeight: 900, textTransform: 'uppercase' as const,
+                            letterSpacing: '0.2em', color: '#999', display: 'block', marginBottom: 4
+                        }}>Reason</label>
+                        <p style={{ fontSize: 14, fontWeight: 700, color: '#DC2626', lineHeight: 1.5 }}>
+                            {authHashError.error_description}
+                        </p>
+                    </div>
+
+                    {/* Raw Hash Fragment */}
+                    <div style={{ marginBottom: 20 }}>
+                        <label style={{
+                            fontSize: 9, fontWeight: 900, textTransform: 'uppercase' as const,
+                            letterSpacing: '0.2em', color: '#999', display: 'block', marginBottom: 4
+                        }}>Token Fragment</label>
+                        <code style={{
+                            fontSize: 10, fontWeight: 600, color: '#666', background: '#F5F5F5',
+                            borderRadius: 8, padding: '8px 12px', display: 'block',
+                            wordBreak: 'break-all' as const, lineHeight: 1.6
+                        }}>
+                            #{authHashError.raw_hash}...
+                        </code>
+                    </div>
+
+                    {/* Retry Button */}
+                    <button
+                        onClick={() => {
+                            (window as any).__AUTH_HASH__ = '';
+                            window.history.replaceState({}, '', '/');
+                            setAuthHashError(null);
+                            window.location.href = '/';
+                        }}
+                        style={{
+                            width: '100%', padding: '14px 0', borderRadius: 14,
+                            background: '#F9A825', color: '#1A1C2E', fontWeight: 900,
+                            fontSize: 13, border: 'none', cursor: 'pointer',
+                            letterSpacing: '0.1em', transition: 'opacity 0.2s, transform 0.15s'
+                        }}
+                        onMouseOver={(e) => (e.currentTarget.style.transform = 'scale(1.02)')}
+                        onMouseOut={(e) => (e.currentTarget.style.transform = 'scale(1)')}
+                    >
+                        RETURN TO LOGIN
+                    </button>
+                </div>
+
+                {/* Help Text */}
+                <p style={{
+                    textAlign: 'center' as const, color: '#aaa', fontSize: 10,
+                    marginTop: 16, letterSpacing: '0.02em', lineHeight: 1.8
+                }}>
+                    This link may have expired or was already used.<br />
+                    Contact your fleet manager for a new activation link.
+                </p>
+            </div>
+
+            {/* W.M Coding Credit Anchor */}
+            <a
+                href="https://wmcoding.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                    position: 'fixed', bottom: 12, right: 16,
+                    fontSize: 9, color: '#ccc', textDecoration: 'none',
+                    letterSpacing: '0.15em', fontWeight: 700,
+                    transition: 'color 0.2s, transform 0.2s'
+                }}
+                onMouseOver={(e) => { e.currentTarget.style.color = '#F9A825'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                onMouseOut={(e) => { e.currentTarget.style.color = '#ccc'; e.currentTarget.style.transform = 'translateY(0)'; }}
+            >
+                Powered by W.M Coding
+            </a>
+        </div>
+    );
+
+    // Intercept: Password Reset Modal
+    if (showPasswordReset) return (
+        <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 text-slate-900 font-sans relative overflow-hidden">
+            {/* Visual Law Header Bar */}
+            <div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: '4px', background: '#F9A825', zIndex: 50 }} />
+
+            {/* Subtle Background Glow */}
+            <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+                <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-amber-500/5 rounded-full blur-[100px]" />
+                <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-blue-500/5 rounded-full blur-[100px]" />
+            </div>
+
+            <div className="w-full max-w-sm relative z-10">
+                {/* Brand Logo */}
+                <div className="flex flex-col items-center mb-8">
+                    <div style={{
+                        width: 64, height: 64, borderRadius: '50%', background: '#1A1C2E',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        marginBottom: 16, boxShadow: '0 4px 20px rgba(26,28,46,0.3)'
+                    }}>
+                        <span style={{ color: '#F9A825', fontWeight: 900, fontSize: 22 }}>T</span>
+                    </div>
+                    <h1 style={{ fontSize: 26, fontWeight: 900, letterSpacing: '-0.02em', color: '#1A1C2E', marginBottom: 4 }}>
+                        Setup Password
+                    </h1>
+                    <p style={{ color: '#888', fontSize: 12, letterSpacing: '0.05em' }}>
+                        SECURE YOUR DRIVER ACCOUNT
+                    </p>
+                </div>
+
+                {/* Password Error/Validation Alert */}
+                {authError && (
+                    <div style={{
+                        background: '#DC2626', color: '#fff', padding: '12px 16px',
+                        borderRadius: 12, marginBottom: 16, fontSize: 13, fontWeight: 700,
+                        display: 'flex', alignItems: 'center', gap: 8
+                    }}>
+                        <span style={{ fontSize: 16 }}>⛔</span> {authError}
+                    </div>
+                )}
+
+                <div style={{
+                    background: '#fff', border: '2px solid #F9A825', borderRadius: 24,
+                    padding: 2, boxShadow: '0 4px 24px rgba(249,168,37,0.12)'
+                }}>
                     <form onSubmit={async (e) => {
                         e.preventDefault();
+                        setAuthError(null);
                         if (newPassword !== confirmNewPassword) {
-                            alert("Passwords do not match");
+                            setAuthError('Passwords do not match');
                             return;
                         }
                         if (newPassword.length < 6) {
-                            alert("Password must be at least 6 characters");
+                            setAuthError('Password must be at least 6 characters');
                             return;
                         }
                         setResetLoading(true);
                         try {
-                            const { error } = await supabase.auth.updateUser({ password: newPassword });
+                            const { error } = await supabase.auth.updateUser({
+                                password: newPassword,
+                                data: { needs_password_setup: false, onboarding_completed: true }
+                            });
                             if (error) throw error;
 
-                            // Success! Trigger Email
+                            // Success! Trigger Profile Created Email
                             await supabase.functions.invoke('send-approval-email', {
                                 body: {
                                     action: 'profile_created',
                                     email: user.email,
-                                    name: user.user_metadata?.first_name || 'Driver', // Fallback
+                                    name: user.user_metadata?.first_name || 'Driver',
                                     company_name: 'TowMe'
                                 }
                             });
 
-                            alert("Password updated successfully! Welcome to the fleet.");
-                            setShowPasswordReset(false); // Go to Main App
+                            // Visual Law Success Overlay
+                            setAuthError(null);
+                            setNewPassword('');
+                            setConfirmNewPassword('');
+                            setShowPasswordReset(false);
+                            // Clear the setup-password URL so dashboard loads normally
+                            window.history.replaceState({}, '', '/');
                         } catch (err: any) {
                             console.error("Reset Error:", err);
-                            alert("Failed to update password: " + err.message);
+                            setAuthError(err.message || 'Failed to update password');
                         } finally {
                             setResetLoading(false);
                         }
-                    }} className="p-8 space-y-5">
-                        <div className="space-y-3">
-                            <label className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500 pl-4">New Password</label>
-                            <div className="relative group">
-                                <div className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-600 group-focus-within:text-amber-500 transition-colors">
+                    }} style={{ padding: 28 }}>
+                        <div style={{ marginBottom: 20 }}>
+                            <label style={{
+                                fontSize: 10, fontWeight: 900, textTransform: 'uppercase' as const,
+                                letterSpacing: '0.2em', color: '#888', paddingLeft: 16, display: 'block', marginBottom: 6
+                            }}>New Password</label>
+                            <div style={{ position: 'relative' }}>
+                                <div style={{
+                                    position: 'absolute', left: 20, top: '50%', transform: 'translateY(-50%)',
+                                    color: '#999'
+                                }}>
                                     <Lock size={18} />
                                 </div>
                                 <input
@@ -1120,14 +1402,27 @@ export default function App() {
                                     value={newPassword}
                                     onChange={(e: any) => setNewPassword(e.target.value)}
                                     placeholder="••••••••"
-                                    className="w-full bg-slate-950/50 border border-white/5 rounded-[2rem] py-5 pl-16 pr-8 text-white font-bold placeholder:text-gray-700 focus:border-amber-500/50 outline-none transition-all focus:bg-slate-950"
+                                    style={{
+                                        width: '100%', background: '#FAFAFA', border: '1.5px solid #E5E5E5',
+                                        borderRadius: 20, padding: '18px 20px 18px 52px', fontSize: 15,
+                                        fontWeight: 700, color: '#1A1C2E', outline: 'none',
+                                        transition: 'border-color 0.2s', boxSizing: 'border-box' as const
+                                    }}
+                                    onFocus={(e) => e.target.style.borderColor = '#F9A825'}
+                                    onBlur={(e) => e.target.style.borderColor = '#E5E5E5'}
                                 />
                             </div>
                         </div>
-                        <div className="space-y-3">
-                            <label className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500 pl-4">Confirm Password</label>
-                            <div className="relative group">
-                                <div className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-600 group-focus-within:text-amber-500 transition-colors">
+                        <div style={{ marginBottom: 24 }}>
+                            <label style={{
+                                fontSize: 10, fontWeight: 900, textTransform: 'uppercase' as const,
+                                letterSpacing: '0.2em', color: '#888', paddingLeft: 16, display: 'block', marginBottom: 6
+                            }}>Confirm Password</label>
+                            <div style={{ position: 'relative' }}>
+                                <div style={{
+                                    position: 'absolute', left: 20, top: '50%', transform: 'translateY(-50%)',
+                                    color: '#999'
+                                }}>
                                     <Lock size={18} />
                                 </div>
                                 <input
@@ -1136,255 +1431,323 @@ export default function App() {
                                     value={confirmNewPassword}
                                     onChange={(e: any) => setConfirmNewPassword(e.target.value)}
                                     placeholder="••••••••"
-                                    className="w-full bg-slate-950/50 border border-white/5 rounded-[2rem] py-5 pl-16 pr-8 text-white font-bold placeholder:text-gray-700 focus:border-amber-500/50 outline-none transition-all focus:bg-slate-950"
+                                    style={{
+                                        width: '100%', background: '#FAFAFA', border: '1.5px solid #E5E5E5',
+                                        borderRadius: 20, padding: '18px 20px 18px 52px', fontSize: 15,
+                                        fontWeight: 700, color: '#1A1C2E', outline: 'none',
+                                        transition: 'border-color 0.2s', boxSizing: 'border-box' as const
+                                    }}
+                                    onFocus={(e) => e.target.style.borderColor = '#F9A825'}
+                                    onBlur={(e) => e.target.style.borderColor = '#E5E5E5'}
                                 />
                             </div>
                         </div>
-                        <button type="submit" disabled={resetLoading} className="w-full py-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-sm flex items-center justify-center gap-2">
-                            {resetLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <span>SAVE PROFILE</span>}
+                        <button type="submit" disabled={resetLoading} style={{
+                            width: '100%', padding: '16px 0', borderRadius: 16,
+                            background: '#F9A825', color: '#1A1C2E', fontWeight: 900,
+                            fontSize: 14, border: 'none', cursor: 'pointer',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                            opacity: resetLoading ? 0.7 : 1, transition: 'opacity 0.2s, transform 0.15s',
+                            letterSpacing: '0.1em'
+                        }}
+                            onMouseOver={(e) => (e.currentTarget.style.transform = 'scale(1.02)')}
+                            onMouseOut={(e) => (e.currentTarget.style.transform = 'scale(1)')}>
+                            {resetLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <span>ACTIVATE ACCOUNT</span>}
                         </button>
                     </form>
                 </div>
+
+                {/* Security Notice */}
+                <p style={{
+                    textAlign: 'center' as const, color: '#aaa', fontSize: 10,
+                    marginTop: 16, letterSpacing: '0.05em'
+                }}>
+                    🔒 Your password is encrypted end-to-end via Supabase Auth
+                </p>
             </div>
+
+            {/* W.M Coding Credit Anchor */}
+            <a
+                href="https://wmcoding.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                    position: 'fixed', bottom: 12, right: 16,
+                    fontSize: 9, color: '#ccc', textDecoration: 'none',
+                    letterSpacing: '0.15em', fontWeight: 700,
+                    transition: 'color 0.2s, transform 0.2s'
+                }}
+                onMouseOver={(e) => { e.currentTarget.style.color = '#F9A825'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                onMouseOut={(e) => { e.currentTarget.style.color = '#ccc'; e.currentTarget.style.transform = 'translateY(0)'; }}
+            >
+                Powered by W.M Coding
+            </a>
         </div>
     );
 
     if (!user) return (
 
-        <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 text-white font-sans relative overflow-hidden">
-            <div className={`w-full max-w-sm relative z-10 animate-slide-up ${applicationModal !== 'none' ? 'blur-sm scale-95 pointer-events-none' : ''}`}>
-                <div className="text-center mb-10">
-                    <div className="inline-flex items-center justify-center mb-6 relative group">
-                        <div className="absolute inset-0 bg-amber-500/20 rounded-full blur-xl opacity-60"></div>
-                        <div className="relative w-24 h-24 bg-gradient-to-tr from-slate-900 to-slate-800 rounded-3xl border border-white/10 shadow-2xl flex items-center justify-center">
-                            <Truck className="w-12 h-12 text-amber-500" />
+        <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 text-slate-900 font-sans relative overflow-hidden">
+            {/* Background Glows (Subtle for Light Mode) */}
+            <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+                <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-amber-500/5 rounded-full blur-[100px]" />
+                <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-blue-500/5 rounded-full blur-[100px]" />
+            </div>
+
+            <div className={`w-full max-w-sm relative z-10 animate-slide-up ${applicationModal !== 'none' ? 'blur-md scale-95 pointer-events-none' : ''}`}>
+
+                {/* Brand Logo Container */}
+                <div className="flex flex-col items-center mb-10">
+                    {/* Correct Circular Midnight Blue Logo Container */}
+                    {/* Correct Circular Midnight Blue Logo Container */}
+                    <div className="flex items-center justify-center w-24 h-24 rounded-full bg-[#1A1C2E] shadow-xl mb-6 overflow-hidden">
+                        {/* CSS-based Logo match for "TOWME" text */}
+                        <div className="flex items-center justify-center">
+                            <span className="text-white font-black text-xl tracking-tighter">TOW</span>
+                            <span className="text-[#F9A825] font-black text-xl tracking-tighter">ME</span>
                         </div>
                     </div>
-                    <h1 className="text-5xl font-black tracking-tighter text-white mb-2">TowMe</h1>
-                    <p className="text-amber-500 text-[10px] font-bold uppercase tracking-[0.35em]">Driver Portal</p>
+                    <div className="text-center">
+
+                        <p className="text-xs font-bold tracking-[0.2em] text-amber-500 uppercase">
+                            Driver Portal
+                        </p>
+                    </div>
                 </div>
 
-                <div className="glass-panel p-1 rounded-[2rem] bg-slate-900/95 border border-white/10">
-                    <form onSubmit={handleLogin} className="p-8 space-y-5">
+                <div className="w-full bg-white border border-slate-200 rounded-[2.5rem] p-8 shadow-2xl shadow-slate-200/50">
+                    <form onSubmit={handleLogin} className="space-y-5">
                         {authError && (
-                            <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 flex items-start gap-3">
+                            <div className="bg-red-50 border border-red-200 rounded-xl p-3 flex items-start gap-3">
                                 <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
-                                <p className="text-[11px] text-red-200">{authError}</p>
+                                <p className="text-[11px] text-red-600 font-medium">{authError}</p>
                             </div>
                         )}
-                        <AuthInput
-                            icon={<Mail size={18} />}
-                            label="Operator ID"
-                            type="email"
-                            required
-                            value={email}
-                            onChange={(e: any) => setEmail(e.target.value)}
-                            placeholder="driver@towme.com"
-                        />
-                        <AuthInput
-                            icon={<Lock size={18} />}
-                            label="Access Key"
-                            type="password"
-                            required
-                            value={password}
-                            onChange={(e: any) => setPassword(e.target.value)}
-                            placeholder="••••••••"
-                        />
-                        <button type="submit" disabled={authLoading} className="w-full py-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-sm flex items-center justify-center gap-2">
-                            {authLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><span>AUTHENTICATE</span><ChevronRight size={16} /></>}
+                        <div className="space-y-1">
+
+                            <AuthInput
+                                icon={<Mail size={18} className="text-slate-400" />}
+                                label="Login Email Address"
+                                type="email"
+                                required
+                                value={email}
+                                onChange={(e: any) => setEmail(e.target.value)}
+                                placeholder="driver@towme.com"
+                                className="bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-amber-500 focus:ring-amber-500/20"
+                            />
+                        </div>
+                        <div className="space-y-1">
+
+                            <AuthInput
+                                icon={<Lock size={18} className="text-slate-400" />}
+                                label="Password"
+                                type="password"
+                                required
+                                value={password}
+                                onChange={(e: any) => setPassword(e.target.value)}
+                                placeholder="••••••••"
+                                className="bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-amber-500 focus:ring-amber-500/20"
+                            />
+                        </div>
+
+                        <button
+                            type="submit"
+                            disabled={authLoading}
+                            style={{ backgroundColor: brandSettings.brand.colors.primary }}
+                            className="w-full py-4 rounded-xl text-white font-black text-sm uppercase tracking-wider shadow-lg shadow-amber-500/30 hover:brightness-110 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 mt-4"
+                        >
+                            {authLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><span>LOGIN</span><ChevronRight size={16} /></>}
                         </button>
                     </form>
                 </div>
 
                 {/* Partner Links */}
                 <div className="mt-8 flex flex-col gap-3">
-                    <p className="text-center text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2">Interested in Partnership?</p>
+                    <p className="text-center text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Interested in Partnership?</p>
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="relative group">
-                            <button onClick={() => setApplicationModal('partner')} className="w-full glass-panel p-4 border border-white/5 hover:bg-amber-500/5 transition-all flex flex-col items-center gap-2">
-                                <Truck size={20} className="text-gray-400 group-hover:text-amber-500 transition-colors" />
-                                <span className="text-[10px] font-bold text-gray-300 uppercase tracking-wider">Partner</span>
-                            </button>
-                            {/* Top Tier Modal / Tooltip */}
-                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 w-64 bg-slate-900 border border-amber-500/30 rounded-xl p-4 shadow-2xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
-                                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-3 h-3 bg-slate-900 border-r border-b border-amber-500/30 rotate-45"></div>
-                                <h4 className="text-amber-500 text-xs font-bold uppercase mb-1">Single Partner</h4>
-                                <p className="text-[10px] text-slate-300 leading-relaxed">Sign up if you are self employed owning 1 vehicle and you are the driver.</p>
-                            </div>
-                        </div>
+                        <button onClick={() => setApplicationModal('partner')} className="w-full bg-white border border-slate-200 hover:border-amber-500/50 hover:bg-amber-50 rounded-xl p-4 transition-all flex flex-col items-center gap-2 group shadow-sm">
+                            <Truck size={20} className="text-slate-400 group-hover:text-amber-500 transition-colors" />
+                            <span className="text-[10px] font-bold text-slate-500 group-hover:text-slate-900 uppercase tracking-wider">Partner</span>
+                        </button>
 
-                        <div className="relative group">
-                            <button onClick={() => setApplicationModal('fleet')} className="w-full glass-panel p-4 border border-white/5 hover:bg-purple-500/5 transition-all flex flex-col items-center gap-2">
-                                <Building2 size={20} className="text-gray-400 group-hover:text-purple-500 transition-colors" />
-                                <span className="text-[10px] font-bold text-gray-300 uppercase tracking-wider">Fleet</span>
-                            </button>
-                            {/* Top Tier Modal / Tooltip */}
-                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-4 w-64 bg-slate-900 border border-purple-500/30 rounded-xl p-4 shadow-2xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
-                                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-3 h-3 bg-slate-900 border-r border-b border-purple-500/30 rotate-45"></div>
-                                <h4 className="text-purple-500 text-xs font-bold uppercase mb-1">Fleet Owner</h4>
-                                <p className="text-[10px] text-slate-300 leading-relaxed">Sign up if you own more than 1 vehicle and have drivers employed under your company/business.</p>
-                            </div>
-                        </div>
+                        <button onClick={() => setApplicationModal('fleet')} className="w-full bg-white border border-slate-200 hover:border-blue-500/50 hover:bg-blue-50 rounded-xl p-4 transition-all flex flex-col items-center gap-2 group shadow-sm">
+                            <Building2 size={20} className="text-slate-400 group-hover:text-blue-500 transition-colors" />
+                            <span className="text-[10px] font-bold text-slate-500 group-hover:text-slate-900 uppercase tracking-wider">Fleet</span>
+                        </button>
                     </div>
-
                 </div>
             </div>
 
-            {/* Application Modal */}
+            {/* Vehicle Profile Modal (Patch) */}
+            {showVehicleProfile && (
+                <VehicleProfile
+                    user={user}
+                    onComplete={() => {
+                        setShowVehicleProfile(false);
+                        initDriver(); // Refresh status
+                    }}
+                />
+            )}
+
+            {/* Application Modal (Patched with V2 check) */}
             {applicationModal !== 'none' && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
-                    <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => setApplicationModal('none')}></div>
-                    <div className="w-full max-w-lg bg-slate-900 border border-white/10 rounded-[2rem] shadow-2xl relative z-10 overflow-hidden flex flex-col max-h-[90vh]">
-                        {appSuccess ? (
-                            <div className="flex flex-col items-center justify-center p-12 text-center h-full min-h-[400px]">
-                                <CheckCircle2 size={40} className="text-green-500 mb-6" />
-                                <h3 className="text-2xl font-black text-white mb-2">Application Received</h3>
-                                <p className="text-gray-400 text-sm">We will contact you shortly.</p>
-                            </div>
-                        ) : (
-                            <>
-                                <div className="p-6 border-b border-white/5 flex justify-between items-center">
-                                    <h3 className="text-xl font-black text-white">{applicationModal === 'partner' ? 'Become a Partner' : 'Fleet Partnership'}</h3>
-                                    <button onClick={() => setApplicationModal('none')} className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center">
-                                        <X size={16} className="text-gray-400" />
-                                    </button>
+                brandSettings.features.NEW_ERA_ENABLED ? (
+                    <RegistrationV2 type={applicationModal} onClose={() => setApplicationModal('none')} />
+                ) : (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
+                        <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => setApplicationModal('none')}></div>
+                        <div className="w-full max-w-lg bg-white border border-slate-200 rounded-[2rem] shadow-xl relative z-10 overflow-hidden flex flex-col max-h-[90vh]">
+                            {appSuccess ? (
+                                <div className="flex flex-col items-center justify-center p-12 text-center h-full min-h-[400px]">
+                                    <CheckCircle2 size={40} className="text-green-500 mb-6" />
+                                    <h3 className="text-2xl font-black text-white mb-2">Application Received</h3>
+                                    <p className="text-gray-400 text-sm">We will contact you shortly.</p>
                                 </div>
-                                <div className="p-6 overflow-y-auto">
-                                    <form onSubmit={handleApplicationSubmit} className="space-y-4">
-
-                                        <div className="mb-6 border-b border-white/5 pb-2">
-                                            <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest">Business / Driver information</h4>
-                                        </div>
-
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <input required className="w-full bg-slate-950 border border-white/10 rounded-lg px-4 py-3 text-sm text-white"
-                                                value={appForm.company_name} onChange={e => setAppForm({ ...appForm, company_name: e.target.value })} placeholder="Business Name" />
-
-                                            <input required className="w-full bg-slate-950 border border-white/10 rounded-lg px-4 py-3 text-sm text-white"
-                                                value={appForm.owner_name} onChange={e => setAppForm({ ...appForm, owner_name: e.target.value })} placeholder="Owner Name" />
-                                        </div>
-                                        <input required className="w-full bg-slate-950 border border-white/10 rounded-lg px-4 py-3 text-sm text-white"
-                                            value={appForm.vat_number} onChange={e => setAppForm({ ...appForm, vat_number: e.target.value })} placeholder="VAT Number" />
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <input required type="email" className="w-full bg-slate-950 border border-white/10 rounded-lg px-4 py-3 text-sm text-white"
-                                                value={appForm.app_email} onChange={e => setAppForm({ ...appForm, app_email: e.target.value })} placeholder="Email Address" />
-                                            <input required className="w-full bg-slate-950 border border-white/10 rounded-lg px-4 py-3 text-sm text-white"
-                                                value={appForm.phone} onChange={e => setAppForm({ ...appForm, phone: e.target.value })} placeholder="Phone Number" />
-                                        </div>
-                                        <textarea required className="w-full bg-slate-950 border border-white/10 rounded-lg px-4 py-3 text-sm text-white h-20"
-                                            value={appForm.address} onChange={e => setAppForm({ ...appForm, address: e.target.value })} placeholder="Registered Business Address" />
-
-                                        {/* Document Uploads */}
-                                        <div className="pt-4 border-t border-white/10 space-y-4">
-                                            <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Required Documents</p>
-
-                                            <FileUploadField
-                                                label="Driving License Front"
-                                                fileUrl={appForm.driving_license_front}
-                                                expiryDate={appForm.driving_license_front_expiry}
-                                                onFileChange={(e: any) => handleFileUpload(e, 'driving_license_front')}
-                                                onDateChange={(val: string) => setAppForm(prev => ({ ...prev, driving_license_front_expiry: val }))}
-                                                uploading={uploadingFiles['driving_license_front']}
-                                                errorText={redFlags['Driving License Front']}
-                                            />
-
-                                            <FileUploadField
-                                                label="Driving License Back"
-                                                fileUrl={appForm.driving_license_back}
-                                                expiryDate={appForm.driving_license_back_expiry}
-                                                onFileChange={(e: any) => handleFileUpload(e, 'driving_license_back')}
-                                                onDateChange={(val: string) => setAppForm(prev => ({ ...prev, driving_license_back_expiry: val }))}
-                                                uploading={uploadingFiles['driving_license_back']}
-                                                errorText={redFlags['Driving License Back']}
-                                            />
-
-                                            <SimpleFileUploadField
-                                                label="ID Card Front"
-                                                fileUrl={appForm.id_card_front}
-                                                onFileChange={(e: any) => handleFileUpload(e, 'id_card_front')}
-                                                uploading={uploadingFiles['id_card_front']}
-                                                errorText={redFlags['ID Card Front']}
-                                            />
-
-                                            <FileUploadField
-                                                label="ID Card Back"
-                                                fileUrl={appForm.id_card_back}
-                                                expiryDate={appForm.id_card_back_expiry}
-                                                onFileChange={(e: any) => handleFileUpload(e, 'id_card_back')}
-                                                onDateChange={(val: string) => setAppForm(prev => ({ ...prev, id_card_back_expiry: val }))}
-                                                uploading={uploadingFiles['id_card_back']}
-                                                errorText={redFlags['ID Card Back']}
-                                            />
-
-                                            <FileUploadField
-                                                label="Insurance Policy"
-                                                fileUrl={appForm.insurance_policy}
-                                                expiryDate={appForm.insurance_policy_expiry}
-                                                onFileChange={(e: any) => handleFileUpload(e, 'insurance_policy')}
-                                                onDateChange={(val: string) => setAppForm(prev => ({ ...prev, insurance_policy_expiry: val }))}
-                                                uploading={uploadingFiles['insurance_policy']}
-                                                errorText={redFlags['Insurance Policy']}
-                                            />
-                                        </div>
-
-
-                                        <div className="pt-4 border-t border-white/10">
-                                            <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Tow Truck Information</p>
-                                            <div className="grid grid-cols-2 gap-4 mb-3">
-                                                <input required className="w-full bg-slate-950 border border-white/10 rounded-lg px-4 py-3 text-sm text-white"
-                                                    value={appForm.tow_truck_make} onChange={e => setAppForm({ ...appForm, tow_truck_make: e.target.value })} placeholder="Make" />
-                                                <input required className="w-full bg-slate-950 border border-white/10 rounded-lg px-4 py-3 text-sm text-white"
-                                                    value={appForm.tow_truck_model} onChange={e => setAppForm({ ...appForm, tow_truck_model: e.target.value })} placeholder="Model" />
-                                            </div>
-                                            <div className="grid grid-cols-2 gap-4 mb-3">
-                                                <input required className="w-full bg-slate-950 border border-white/10 rounded-lg px-4 py-3 text-sm text-white"
-                                                    value={appForm.tow_truck_year} onChange={e => setAppForm({ ...appForm, tow_truck_year: e.target.value })} placeholder="Year" />
-                                                <input required className="w-full bg-slate-950 border border-white/10 rounded-lg px-4 py-3 text-sm text-white"
-                                                    value={appForm.tow_truck_type} onChange={e => setAppForm({ ...appForm, tow_truck_type: e.target.value })} placeholder="Type (e.g. Flatbed)" />
-                                            </div>
-                                            <div className="grid grid-cols-2 gap-4">
-                                                <input required className="w-full bg-slate-950 border border-white/10 rounded-lg px-4 py-3 text-sm text-white"
-                                                    value={appForm.tow_truck_registration_plate} onChange={e => setAppForm({ ...appForm, tow_truck_registration_plate: e.target.value })} placeholder="Registration Plate" />
-                                                <input required className="w-full bg-slate-950 border border-white/10 rounded-lg px-4 py-3 text-sm text-white"
-                                                    value={appForm.tow_truck_color} onChange={e => setAppForm({ ...appForm, tow_truck_color: e.target.value })} placeholder="Color" />
-                                            </div>
-                                        </div>
-
-                                        <div className="pt-4 border-t border-white/10">
-                                            <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Categories / Services to Offer</p>
-                                            <div className="grid grid-cols-1 gap-2">
-                                                {allServices.map(service => (
-                                                    <label key={service.id} className="flex items-center gap-3 p-2 hover:bg-white/5 rounded cursor-pointer">
-                                                        <input
-                                                            type="checkbox"
-                                                            className="rounded border-slate-600 bg-slate-900 text-amber-500 focus:ring-amber-500"
-                                                            checked={appForm.services_offered.includes(service.name)}
-                                                            onChange={(e) => {
-                                                                if (e.target.checked) {
-                                                                    setAppForm(prev => ({ ...prev, services_offered: [...prev.services_offered, service.name] }));
-                                                                } else {
-                                                                    setAppForm(prev => ({ ...prev, services_offered: prev.services_offered.filter(s => s !== service.name) }));
-                                                                }
-                                                            }}
-                                                        />
-                                                        <span className="text-sm text-slate-300">{service.name}</span>
-                                                    </label>
-                                                ))}
-                                                {allServices.length === 0 && (
-                                                    <p className="text-xs text-slate-500 italic">No services available</p>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        <button type="submit" disabled={appSubmitting} className="w-full py-4 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 text-slate-950 font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 mt-4">
-                                            {appSubmitting ? <Loader2 className="animate-spin" /> : 'Submit Application'}
+                            ) : (
+                                <>
+                                    <div className="p-6 border-b border-white/5 flex justify-between items-center">
+                                        <h3 className="text-xl font-black text-slate-900">{applicationModal === 'partner' ? 'Become a Partner' : 'Fleet Partnership'}</h3>
+                                        <button onClick={() => setApplicationModal('none')} className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center">
+                                            <X size={16} className="text-gray-400" />
                                         </button>
-                                    </form>
-                                </div>
-                            </>
-                        )}
+                                    </div>
+                                    <div className="p-6 overflow-y-auto">
+                                        <form onSubmit={handleApplicationSubmit} className="space-y-4">
+
+                                            <div className="mb-6 border-b border-white/5 pb-2">
+                                                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest">Business / Driver information</h4>
+                                            </div>
+
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <input required className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-sm text-slate-900"
+                                                    value={appForm.company_name} onChange={e => setAppForm({ ...appForm, company_name: e.target.value })} placeholder="Business Name" />
+
+                                                <input required className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-sm text-slate-900"
+                                                    value={appForm.owner_name} onChange={e => setAppForm({ ...appForm, owner_name: e.target.value })} placeholder="Owner Name" />
+                                            </div>
+                                            <input required className="w-full bg-slate-950 border border-white/10 rounded-lg px-4 py-3 text-sm text-white"
+                                                value={appForm.vat_number} onChange={e => setAppForm({ ...appForm, vat_number: e.target.value })} placeholder="VAT Number" />
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <input required type="email" className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-sm text-slate-900"
+                                                    value={appForm.app_email} onChange={e => setAppForm({ ...appForm, app_email: e.target.value })} placeholder="Email Address" />
+                                                <input required className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-sm text-slate-900"
+                                                    value={appForm.phone} onChange={e => setAppForm({ ...appForm, phone: e.target.value })} placeholder="Phone Number" />
+                                            </div>
+                                            <textarea required className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-sm text-slate-900 h-20"
+                                                value={appForm.address} onChange={e => setAppForm({ ...appForm, address: e.target.value })} placeholder="Registered Business Address" />
+
+                                            {/* Document Uploads */}
+                                            <div className="pt-4 border-t border-white/10 space-y-4">
+                                                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Required Documents</p>
+
+                                                <FileUploadField
+                                                    label="Driving License Front"
+                                                    fileUrl={appForm.driving_license_front}
+                                                    expiryDate={appForm.driving_license_front_expiry}
+                                                    onFileChange={(e: any) => handleFileUpload(e, 'driving_license_front')}
+                                                    onDateChange={(val: string) => setAppForm(prev => ({ ...prev, driving_license_front_expiry: val }))}
+                                                    uploading={uploadingFiles['driving_license_front']}
+                                                    errorText={redFlags['Driving License Front']}
+                                                />
+
+                                                <FileUploadField
+                                                    label="Driving License Back"
+                                                    fileUrl={appForm.driving_license_back}
+                                                    expiryDate={appForm.driving_license_back_expiry}
+                                                    onFileChange={(e: any) => handleFileUpload(e, 'driving_license_back')}
+                                                    onDateChange={(val: string) => setAppForm(prev => ({ ...prev, driving_license_back_expiry: val }))}
+                                                    uploading={uploadingFiles['driving_license_back']}
+                                                    errorText={redFlags['Driving License Back']}
+                                                />
+
+                                                <SimpleFileUploadField
+                                                    label="ID Card Front"
+                                                    fileUrl={appForm.id_card_front}
+                                                    onFileChange={(e: any) => handleFileUpload(e, 'id_card_front')}
+                                                    uploading={uploadingFiles['id_card_front']}
+                                                    errorText={redFlags['ID Card Front']}
+                                                />
+
+                                                <FileUploadField
+                                                    label="ID Card Back"
+                                                    fileUrl={appForm.id_card_back}
+                                                    expiryDate={appForm.id_card_back_expiry}
+                                                    onFileChange={(e: any) => handleFileUpload(e, 'id_card_back')}
+                                                    onDateChange={(val: string) => setAppForm(prev => ({ ...prev, id_card_back_expiry: val }))}
+                                                    uploading={uploadingFiles['id_card_back']}
+                                                    errorText={redFlags['ID Card Back']}
+                                                />
+
+                                                <FileUploadField
+                                                    label="Insurance Policy"
+                                                    fileUrl={appForm.insurance_policy}
+                                                    expiryDate={appForm.insurance_policy_expiry}
+                                                    onFileChange={(e: any) => handleFileUpload(e, 'insurance_policy')}
+                                                    onDateChange={(val: string) => setAppForm(prev => ({ ...prev, insurance_policy_expiry: val }))}
+                                                    uploading={uploadingFiles['insurance_policy']}
+                                                    errorText={redFlags['Insurance Policy']}
+                                                />
+                                            </div>
+
+
+                                            <div className="pt-4 border-t border-white/10">
+                                                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Tow Truck Information</p>
+                                                <div className="grid grid-cols-2 gap-4 mb-3">
+                                                    <input required className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-sm text-slate-900"
+                                                        value={appForm.tow_truck_make} onChange={e => setAppForm({ ...appForm, tow_truck_make: e.target.value })} placeholder="Make" />
+                                                    <input required className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-sm text-slate-900"
+                                                        value={appForm.tow_truck_model} onChange={e => setAppForm({ ...appForm, tow_truck_model: e.target.value })} placeholder="Model" />
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-4 mb-3">
+                                                    <input required className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-sm text-slate-900"
+                                                        value={appForm.tow_truck_year} onChange={e => setAppForm({ ...appForm, tow_truck_year: e.target.value })} placeholder="Year" />
+                                                    <input required className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-sm text-slate-900"
+                                                        value={appForm.tow_truck_type} onChange={e => setAppForm({ ...appForm, tow_truck_type: e.target.value })} placeholder="Type (e.g. Flatbed)" />
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <input required className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-sm text-slate-900"
+                                                        value={appForm.tow_truck_registration_plate} onChange={e => setAppForm({ ...appForm, tow_truck_registration_plate: e.target.value })} placeholder="Registration Plate" />
+                                                    <input required className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-sm text-slate-900"
+                                                        value={appForm.tow_truck_color} onChange={e => setAppForm({ ...appForm, tow_truck_color: e.target.value })} placeholder="Color" />
+                                                </div>
+                                            </div>
+
+                                            <div className="pt-4 border-t border-white/10">
+                                                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Categories / Services to Offer</p>
+                                                <div className="grid grid-cols-1 gap-2">
+                                                    {allServices.map(service => (
+                                                        <label key={service.id} className="flex items-center gap-3 p-2 hover:bg-white/5 rounded cursor-pointer">
+                                                            <input
+                                                                type="checkbox"
+                                                                className="rounded border-slate-300 bg-slate-50 text-amber-500 focus:ring-amber-500"
+                                                                checked={appForm.services_offered.includes(service.name)}
+                                                                onChange={(e) => {
+                                                                    if (e.target.checked) {
+                                                                        setAppForm(prev => ({ ...prev, services_offered: [...prev.services_offered, service.name] }));
+                                                                    } else {
+                                                                        setAppForm(prev => ({ ...prev, services_offered: prev.services_offered.filter(s => s !== service.name) }));
+                                                                    }
+                                                                }}
+                                                            />
+                                                            <span className="text-sm text-slate-300">{service.name}</span>
+                                                        </label>
+                                                    ))}
+                                                    {allServices.length === 0 && (
+                                                        <p className="text-xs text-slate-500 italic">No services available</p>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            <button type="submit" disabled={appSubmitting} className="w-full py-4 rounded-xl bg-[#F9A825] hover:bg-[#F9A825]/90 text-white font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 mt-4">
+                                                {appSubmitting ? <Loader2 className="animate-spin" /> : 'Submit Application'}
+                                            </button>
+                                        </form>
+                                    </div>
+                                </>
+                            )}
+                        </div>
                     </div>
-                </div>
+                )
             )}
         </div>
 
@@ -1393,7 +1756,7 @@ export default function App() {
 
     return (
         <APIProvider apiKey={GOOGLE_MAPS_API_KEY}>
-            <div className="min-h-screen bg-slate-950 flex flex-col pb-28 text-white font-sans overflow-x-hidden">
+            <div className="min-h-screen bg-slate-50 flex flex-col pb-28 text-slate-900 font-sans overflow-x-hidden">
                 {activeTab === 'jobs' && (
                     <div className="animate-slide-up w-full max-w-lg mx-auto md:max-w-none">
                         <header className="px-8 py-12 flex justify-between items-end">
@@ -1439,9 +1802,9 @@ export default function App() {
                                     </div>
                                     <button
                                         onClick={toggleOnline}
-                                        className={`w-24 h-24 rounded-[3rem] flex items-center justify-center transition-all duration-700 relative shadow-2xl ${isOnline
-                                            ? 'bg-gradient-to-br from-amber-400 to-yellow-600 ring-4 ring-amber-500/20'
-                                            : 'bg-white/5 border border-white/10 grayscale'
+                                        className={`w-24 h-24 rounded-[3rem] flex items-center justify-center transition-all duration-700 relative shadow-xl ${isOnline
+                                            ? 'bg-[#F9A825] ring-4 ring-[#F9A825]/20'
+                                            : 'bg-slate-100 border border-slate-200 grayscale'
                                             }`}
                                     >
                                         <Power className={isOnline ? 'text-white' : 'text-gray-700'} size={42} strokeWidth={3.5} />
@@ -1457,6 +1820,35 @@ export default function App() {
                                     <p className="text-gray-600 font-black text-2xl italic">Beacon Restricted</p>
                                 </div>
                             )}
+                        </div>
+
+                        {/* Driver Intelligence Card (Phase 35) */}
+                        <div className="px-8 mb-8 grid grid-cols-2 gap-4">
+                            {/* Financials / Commission */}
+                            <div className="glass-panel p-6 border-white/5 bg-white/2 relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 p-2 opacity-50 group-hover:opacity-100 transition-opacity">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                                </div>
+                                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-500 mb-2">Commission</p>
+                                <div className="flex items-baseline gap-1">
+                                    <span className="text-3xl font-black text-white tracking-tighter">{commissionRate}%</span>
+                                    <span className="text-[10px] font-bold text-gray-500">FLAT</span>
+                                </div>
+                            </div>
+
+                            {/* Asset Verification Status */}
+                            <div className={`glass-panel p-6 border-white/5 relative overflow-hidden group ${assetVerified ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-red-500/5 border-red-500/20'}`}>
+                                <div className="absolute top-0 right-0 p-2">
+                                    {assetVerified ? <CheckCircle2 size={12} className="text-emerald-500" /> : <AlertCircle size={12} className="text-red-500" />}
+                                </div>
+                                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-500 mb-2">Truck Status</p>
+                                <div className="flex flex-col">
+                                    <span className={`text-sm font-black tracking-tight ${assetVerified ? 'text-emerald-400' : 'text-red-400'}`}>
+                                        {assetVerified ? 'VERIFIED' : 'PENDING'}
+                                    </span>
+                                    <span className="text-[9px] font-bold text-gray-600 truncate">{assetDetails || 'No Asset'}</span>
+                                </div>
+                            </div>
                         </div>
 
                         <div className="px-8 pb-12">
@@ -1857,17 +2249,17 @@ function NavIcon({ active, onClick, icon, label }: { active: boolean, onClick: (
     );
 }
 
-function AuthInput({ icon, label, ...props }: any) {
+function AuthInput({ icon, label, className = "", ...props }: any) {
     return (
         <div className="space-y-3">
-            <label className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500 pl-4">{label}</label>
+            <label className="text-[10px] font-black uppercase tracking-[0.3em] pl-4 opacity-50">{label}</label>
             <div className="relative group">
-                <div className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-600 group-focus-within:text-amber-500 transition-colors">
+                <div className="absolute left-6 top-1/2 -translate-y-1/2 opacity-50 group-focus-within:opacity-100 group-focus-within:text-amber-500 transition-colors z-10 pointer-events-none">
                     {icon}
                 </div>
                 <input
                     {...props}
-                    className="w-full bg-slate-950/50 border border-white/5 rounded-[2rem] py-5 pl-16 pr-8 text-white font-bold placeholder:text-gray-700 focus:border-amber-500/50 outline-none transition-all focus:bg-slate-950"
+                    className={`w-full rounded-[2rem] py-5 pl-16 pr-8 font-bold outline-none transition-all ${className || "bg-slate-950/50 border border-white/5 text-white placeholder:text-gray-700 focus:border-amber-500/50 focus:bg-slate-950"}`}
                 />
             </div>
         </div>

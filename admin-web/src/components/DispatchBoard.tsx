@@ -24,7 +24,7 @@ const COLUMNS = [
     { id: 'pending', label: 'Pending', color: 'bg-blue-500/10 border-blue-500/20 text-blue-400' },
     { id: 'dispatched', label: 'Dispatched', color: 'bg-purple-500/10 border-purple-500/20 text-purple-400' },
     { id: 'en_route', label: 'En Route', color: 'bg-yellow-500/10 border-yellow-500/20 text-yellow-400' },
-    { id: 'in_progress', label: 'In Progress', color: 'bg-amber-500/10 border-amber-500/20 text-amber-400' },
+    { id: 'in_progress', label: 'In Progress', color: 'bg-[#F9A825]/10 border-[#F9A825]/20 text-[#F9A825]' },
     { id: 'completed', label: 'Completed', color: 'bg-green-500/10 border-green-500/20 text-green-400' }
 ];
 
@@ -113,7 +113,7 @@ export function DispatchBoard({ requests, onUpdate, onAssign }: DispatchBoardPro
                                 key={req.id}
                                 draggable
                                 onDragStart={() => handleDragStart(req.id)}
-                                className="glass-panel p-3 cursor-grab active:cursor-grabbing hover:bg-white/5 hover:border-amber-500/30 transition-all group"
+                                className="glass-panel p-3 cursor-grab active:cursor-grabbing hover:bg-white/5 hover:border-[#F9A825]/30 transition-all group"
                             >
                                 <div className="flex justify-between items-start mb-2">
                                     <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full uppercase ${req.source === 'manual' ? 'bg-purple-500/20 text-purple-300' : 'bg-blue-500/20 text-blue-300'
@@ -133,7 +133,7 @@ export function DispatchBoard({ requests, onUpdate, onAssign }: DispatchBoardPro
                                 </div>
 
                                 <div className="flex items-center gap-2 mb-2 text-xs text-theme-secondary">
-                                    <MapPin size={12} className="text-amber-500" />
+                                    <MapPin size={12} className="text-[#F9A825]" />
                                     <span className="truncate max-w-[180px]">{req.pickup_address}</span>
                                 </div>
 
@@ -147,7 +147,7 @@ export function DispatchBoard({ requests, onUpdate, onAssign }: DispatchBoardPro
                                     {col.id !== 'completed' && (
                                         <button
                                             onClick={() => { setDraggedId(req.id); handleDrop(COLUMNS[COLUMNS.findIndex(c => c.id === col.id) + 1].id); }}
-                                            className="text-[10px] bg-white/5 hover:bg-amber-500 hover:text-black px-2 py-1 rounded transition-colors flex items-center gap-1"
+                                            className="text-[10px] bg-white/5 hover:bg-[#F9A825] hover:text-black px-2 py-1 rounded transition-colors flex items-center gap-1"
                                         >
                                             Next <ArrowRight size={8} />
                                         </button>

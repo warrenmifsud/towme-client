@@ -17,3 +17,10 @@
 ## 4. LINTING & SAFETY
 - **No Phantom Tokens:** Do not invent class names. Check `index.css` before applying a class.
 - **Visual Check:** If a container looks "Solid Grey" or "Solid White," it is BROKEN. It must be "Frosted."
+
+## 5. TOWME CORE STANDARDS (GLOBAL GUARDRAILS)
+- **Zero Hardcoding:** All brand colors (#F9A825), commission rates (15%), and tax details must be stored in a centralized src/config/brand_settings.json file.
+- **Non-Destructive Logic:** Do not overwrite existing logic. If a change is required, create a v2 version (e.g., dispatch_logic_v2.ts) and use a feature toggle.
+- **Reversibility:** Every new feature must be wrapped in a conditional check: if (config.FEATURES.NEW_ERA_ENABLED) { ... }.
+- **No Assumptions:** If a requirement is ambiguous, pause and ask for clarification.
+- **Branding Strictness:** Midnight Blue (#1A1C2E) is permitted only for logo assets. All UI components must strictly use #F9A825.

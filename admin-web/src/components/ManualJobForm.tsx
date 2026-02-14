@@ -186,7 +186,7 @@ export function ManualJobForm({ onJobCreated }: ManualJobFormProps) {
                             ))}
                         </select>
                         <div className="relative">
-                            <Euro className="absolute left-3 top-3 text-amber-500" size={16} />
+                            <Euro className="absolute left-3 top-3 text-[#F9A825]" size={16} />
                             <input
                                 type="number"
                                 required
@@ -195,7 +195,7 @@ export function ManualJobForm({ onJobCreated }: ManualJobFormProps) {
                                 value={priceQuote}
                                 onChange={(e) => setPriceQuote(e.target.value)}
                                 placeholder="0.00"
-                                className="glass-input pl-10 text-amber-400 font-bold"
+                                className="glass-input pl-10 text-[#F9A825] font-bold"
                             />
                         </div>
                     </div>

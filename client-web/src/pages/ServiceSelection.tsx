@@ -18,6 +18,7 @@ interface Category {
     base_price: number;
     description: string;
     icon_name: string;
+    type: 'towing' | 'roadside';
 }
 
 const MALTA_CENTER = { lat: 35.8989, lng: 14.5146 };
@@ -78,6 +79,8 @@ export default function ServiceSelection({ destination: propDestination, onBack,
     const { signOut, user } = useAuth();
     const navigate = useNavigate();
     const [selectedService, setSelectedService] = useState<string | null>(null);
+    // Filter State
+    const [filterType, setFilterType] = useState<'towing' | 'roadside'>('towing');
     // Mock Vehicle for Demo to enable flow (Fixes unused usage of setter)
     const [selectedVehicleId] = useState<string | null>('mock_vehicle_1');
     const location = useLocation();
@@ -204,6 +207,8 @@ export default function ServiceSelection({ destination: propDestination, onBack,
         },
         staleTime: 5 * 60 * 1000, // 5 minutes
     });
+
+    const filteredCategories = categories.filter(c => c.type === filterType || !c.type /* Fallback for legacy */);
 
     // Manual Re-Locate
     const handleLocateMe = () => {
@@ -584,7 +589,23 @@ export default function ServiceSelection({ destination: propDestination, onBack,
                             {/* SCROLLABLE LIST (Visual Viewport Aware) */}
                             <div className="overflow-y-auto overflow-x-hidden flex-1 px-4 custom-scrollbar pb-32">
                                 <div className="space-y-3 py-4">
-                                    {categories.map((service) => {
+                                    {/* Filter Tabs */}
+                                    <div className="flex p-1 mb-4 bg-slate-100 rounded-xl relative">
+                                        <button
+                                            onClick={() => setFilterType('towing')}
+                                            className={`flex-1 flex items-center justify-center py-2 rounded-lg text-xs font-bold transition-all ${filterType === 'towing' ? 'bg-[#F9A825] text-white shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+                                        >
+                                            Towing
+                                        </button>
+                                        <button
+                                            onClick={() => setFilterType('roadside')}
+                                            className={`flex-1 flex items-center justify-center py-2 rounded-lg text-xs font-bold transition-all ${filterType === 'roadside' ? 'bg-[#F9A825] text-white shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+                                        >
+                                            Roadside
+                                        </button>
+                                    </div>
+
+                                    {filteredCategories.map((service) => {
                                         const Icon = getIcon(service.icon_name);
                                         const isSelected = selectedService === service.id;
 

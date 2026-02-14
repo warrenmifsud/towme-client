@@ -60,9 +60,9 @@ export default function Vendors() {
         >
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {vendors.map(vendor => (
-                    <div key={vendor.id} className="glass-panel p-6 hover:border-amber-500/30 transition-all group">
+                    <div key={vendor.id} className="glass-panel p-6 hover:border-[#F9A825]/30 transition-all group">
                         <div className="flex justify-between items-start mb-4">
-                            <div className="surface-icon-container text-slate-400 group-hover:bg-orange-500/20 group-hover:text-orange-500 transition-colors">
+                            <div className="surface-icon-container text-slate-400 group-hover:bg-[#F9A825]/20 group-hover:text-[#F9A825] transition-colors">
                                 <Store size={24} />
                             </div>
                             <div className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-widest flex items-center gap-1.5 ${vendor.is_open ? 'bg-green-500/20 text-green-600' : 'bg-gray-500/20 text-gray-700'}`}>

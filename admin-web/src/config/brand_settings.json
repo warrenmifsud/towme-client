@@ -1,0 +1,30 @@
+{
+    "brand": {
+        "colors": {
+            "primary": "#F9A825",
+            "secondary": "#1A1C2E"
+        },
+        "global_card": {
+            "position": "fixed bottom-6 right-6",
+            "bg": "bg-white",
+            "border": "border-[#F9A825]",
+            "text": "text-[#F9A825]",
+            "animation": "hover:-translate-y-2 transition-transform duration-300 ease-out",
+            "width": "w-auto",
+            "height": "h-auto",
+            "credit_label": "Powered by",
+            "credit_value": "W.M CODING"
+        }
+    },
+    "financials": {
+        "commission_rate": 0.15,
+        "tax_rate": 0.0,
+        "max_surge_multiplier": 3.0,
+        "min_surge_multiplier": 1.0,
+        "surge_label": "SURGE ACTIVE",
+        "surge_default": 1.0
+    },
+    "features": {
+        "NEW_ERA_ENABLED": true
+    }
+}

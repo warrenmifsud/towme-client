@@ -196,7 +196,7 @@ export default function FleetMap() {
 
                                         <!-- Universal High-Intensity Pulse System -->
                                         <!-- Ring 1 (Inner) -->
-                                        <ellipse cx="24" cy="24" rx="14" ry="20" fill="${driver.is_busy ? '#f59e0b' : (driver.is_online ? '#4ade80' : '#94a3b8')}" fill-opacity="0.4" filter="blur(3px)">
+                                        <ellipse cx="24" cy="24" rx="14" ry="20" fill="${driver.is_busy ? '#F9A825' : (driver.is_online ? '#4ade80' : '#94a3b8')}" fill-opacity="0.4" filter="blur(3px)">
                                             ${driver.is_online ? `
                                                 <animate attributeName="fill-opacity" values="0.4;0.7;0.4" dur="2s" repeatCount="indefinite" />
                                                 <animate attributeName="rx" values="14;16;14" dur="2s" repeatCount="indefinite" />
@@ -206,7 +206,7 @@ export default function FleetMap() {
                                         
                                         <!-- Ring 2 (Outer Pulse - Only for Active) -->
                                         ${driver.is_online ? `
-                                            <ellipse cx="24" cy="24" rx="14" ry="20" fill="${driver.is_busy ? '#f59e0b' : '#4ade80'}" fill-opacity="0.3">
+                                            <ellipse cx="24" cy="24" rx="14" ry="20" fill="${driver.is_busy ? '#F9A825' : '#4ade80'}" fill-opacity="0.3">
                                                 <animate attributeName="rx" values="14;24;14" dur="2s" repeatCount="indefinite" />
                                                 <animate attributeName="ry" values="20;32;20" dur="2s" repeatCount="indefinite" />
                                                 <animate attributeName="fill-opacity" values="0.3;0;0.3" dur="2s" repeatCount="indefinite" />
@@ -221,11 +221,11 @@ export default function FleetMap() {
                                             
                                             <!-- Beacons for Ongoing Job -->
                                             ${driver.is_busy ? `
-                                                <rect x="18" y="27" width="4" height="2" fill="#f59e0b">
-                                                    <animate attributeName="fill" values="#fbbf24;#78350f;#fbbf24" dur="0.8s" repeatCount="indefinite" />
+                                                <rect x="18" y="27" width="4" height="2" fill="#F9A825">
+                                                    <animate attributeName="fill" values="#F9A825;#78350f;#F9A825" dur="0.8s" repeatCount="indefinite" />
                                                 </rect>
-                                                <rect x="26" y="27" width="4" height="2" fill="#f59e0b">
-                                                    <animate attributeName="fill" values="#78350f;#fbbf24;#78350f" dur="0.8s" repeatCount="indefinite" />
+                                                <rect x="26" y="27" width="4" height="2" fill="#F9A825">
+                                                    <animate attributeName="fill" values="#78350f;#F9A825;#78350f" dur="0.8s" repeatCount="indefinite" />
                                                 </rect>
                                             ` : ''}
 
@@ -257,17 +257,17 @@ export default function FleetMap() {
                                             </filter>
                                         </defs>
                                         <!-- Extreme Multi-Ring Pulse -->
-                                        <circle cx="24" cy="24" r="12" fill="${req.status === 'pending' ? '#3b82f6' : '#f59e0b'}" fill-opacity="0.5">
+                                        <circle cx="24" cy="24" r="12" fill="${req.status === 'pending' ? '#3b82f6' : '#F9A825'}" fill-opacity="0.5">
                                             <animate attributeName="r" values="12;32;12" dur="1.5s" repeatCount="indefinite" />
                                             <animate attributeName="fill-opacity" values="0.5;0;0.5" dur="1.5s" repeatCount="indefinite" />
                                         </circle>
-                                        <circle cx="24" cy="24" r="10" fill="${req.status === 'pending' ? '#3b82f6' : '#f59e0b'}" fill-opacity="0.3">
+                                        <circle cx="24" cy="24" r="10" fill="${req.status === 'pending' ? '#3b82f6' : '#F9A825'}" fill-opacity="0.3">
                                             <animate attributeName="r" values="10;48;10" dur="1.5s" begin="0.2s" repeatCount="indefinite" />
                                             <animate attributeName="fill-opacity" values="0.4;0;0.4" dur="1.5s" begin="0.2s" repeatCount="indefinite" />
                                         </circle>
                                         <!-- Main Marker -->
                                         <circle cx="24" cy="24" r="10" fill="white" filter="url(#glow)"/>
-                                        <circle cx="24" cy="24" r="7" fill="${req.status === 'pending' ? '#3b82f6' : '#f59e0b'}"/>
+                                        <circle cx="24" cy="24" r="7" fill="${req.status === 'pending' ? '#3b82f6' : '#F9A825'}"/>
                                         <path d="M24 16v8l4 2" stroke="white" stroke-width="2" stroke-linecap="round" fill="none"/>
                                     </svg>
                                 `)}`,
@@ -292,7 +292,7 @@ export default function FleetMap() {
                                         <>
                                             <h4 className="font-bold text-sm text-slate-900">{drivers.find(d => d.driver_id === selectedId)!.full_name}</h4>
                                             <div className="flex items-center gap-2 mt-2">
-                                                <div className={`w-2.5 h-2.5 rounded-full ${drivers.find(d => d.driver_id === selectedId)?.is_busy ? 'bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.5)]' : (drivers.find(d => d.driver_id === selectedId)?.is_online ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]' : 'bg-slate-400')}`} />
+                                                <div className={`w-2.5 h-2.5 rounded-full ${drivers.find(d => d.driver_id === selectedId)?.is_busy ? 'bg-[#F9A825] shadow-[0_0_8px_rgba(249,168,37,0.5)]' : (drivers.find(d => d.driver_id === selectedId)?.is_online ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]' : 'bg-slate-400')}`} />
                                                 <span className="text-[10px] font-black uppercase tracking-wider text-slate-600">
                                                     {drivers.find(d => d.driver_id === selectedId)?.is_busy ? 'On Job' : (drivers.find(d => d.driver_id === selectedId)?.is_online ? 'Online' : 'Offline')}
                                                 </span>
@@ -315,7 +315,7 @@ export default function FleetMap() {
                                             </div>
                                             <div className="mt-2 pt-2 border-t border-slate-100">
                                                 <p className="text-[9px] text-slate-400 uppercase font-black tracking-widest">Job Status</p>
-                                                <p className={`text-xs font-bold mt-0.5 ${requests.find(r => r.id === selectedId)!.status === 'pending' ? 'text-blue-500' : 'text-amber-500'}`}>
+                                                <p className={`text-xs font-bold mt-0.5 ${requests.find(r => r.id === selectedId)!.status === 'pending' ? 'text-blue-500' : 'text-[#F9A825]'}`}>
                                                     {requests.find(r => r.id === selectedId)!.status.replace('_', ' ')}
                                                 </p>
                                             </div>
@@ -358,7 +358,7 @@ export default function FleetMap() {
                         </div>
                         <div className="flex flex-col">
                             <span className="text-[10px] text-gray-400 uppercase font-bold tracking-[0.2em]">Ongoing</span>
-                            <span className="text-2xl font-black text-amber-500 leading-none">{requests.filter(r => ['dispatched', 'en_route', 'in_progress', 'accepted'].includes(r.status)).length}</span>
+                            <span className="text-2xl font-black text-[#F9A825] leading-none">{requests.filter(r => ['dispatched', 'en_route', 'in_progress', 'accepted'].includes(r.status)).length}</span>
                         </div>
                     </div>
 
@@ -373,8 +373,8 @@ export default function FleetMap() {
                         <div className="flex items-center gap-4 text-xs font-black text-blue-400 uppercase tracking-wider">
                             <div className="w-3 h-3 rounded-full bg-blue-500/90 shadow-[0_0_12px_rgba(59,130,246,0.5)] animate-pulse" /> Pending Request
                         </div>
-                        <div className="flex items-center gap-4 text-xs font-black text-amber-500 uppercase tracking-wider">
-                            <div className="w-3 h-3 rounded-full bg-amber-500 shadow-[0_0_12px_rgba(245,158,11,0.5)] animate-pulse" /> Ongoing Job
+                        <div className="flex items-center gap-4 text-xs font-black text-[#F9A825] uppercase tracking-wider">
+                            <div className="w-3 h-3 rounded-full bg-[#F9A825] shadow-[0_0_12px_rgba(249,168,37,0.5)] animate-pulse" /> Ongoing Job
                         </div>
                     </div>
                 </div>

@@ -246,14 +246,14 @@ export default function Dispatch() {
                 <div className="flex bg-black/20 p-1 rounded-lg border border-white/5">
                     <button
                         onClick={() => setViewMode('map')}
-                        className={`px-4 py-1.5 rounded-md text-xs font-bold uppercase tracking-wide transition-all ${viewMode === 'map' ? 'bg-amber-500 text-black shadow-lg' : 'text-slate-400 hover:text-white'
+                        className={`px-4 py-1.5 rounded-md text-xs font-bold uppercase tracking-wide transition-all ${viewMode === 'map' ? 'bg-[#F9A825] text-white shadow-lg' : 'text-slate-400 hover:text-white'
                             }`}
                     >
                         Live Map
                     </button>
                     <button
                         onClick={() => setViewMode('board')}
-                        className={`px-4 py-1.5 rounded-md text-xs font-bold uppercase tracking-wide transition-all ${viewMode === 'board' ? 'bg-amber-500 text-black shadow-lg' : 'text-slate-400 hover:text-white'
+                        className={`px-4 py-1.5 rounded-md text-xs font-bold uppercase tracking-wide transition-all ${viewMode === 'board' ? 'bg-[#F9A825] text-white shadow-lg' : 'text-slate-400 hover:text-white'
                             }`}
                     >
                         Kanban Board
@@ -283,7 +283,7 @@ export default function Dispatch() {
                                     key={req.id}
                                     onClick={() => setSelectedId(req.id)}
                                     className={`p-3 rounded-xl border transition-all cursor-pointer ${selectedId === req.id
-                                        ? 'bg-amber-500/10 border-amber-500/50 shadow-lg'
+                                        ? 'bg-[#F9A825]/10 border-[#F9A825]/50 shadow-lg'
                                         : 'bg-white/5 border-white/5 hover:bg-white/10'
                                         }`}
                                 >
@@ -294,7 +294,7 @@ export default function Dispatch() {
                                                 {req.source}
                                             </span>
                                         </div>
-                                        <span className={`text-[10px] uppercase font-bold ${req.status === 'pending' ? 'text-amber-400' : 'text-green-400'
+                                        <span className={`text-[10px] uppercase font-bold ${req.status === 'pending' ? 'text-[#F9A825]' : 'text-green-400'
                                             }`}>
                                             {req.status.replace('_', ' ')}
                                         </span>
@@ -355,7 +355,7 @@ export default function Dispatch() {
                                                         </defs>
 
                                                         <!-- Universal High-Intensity Pulse System -->
-                                                        <ellipse cx="24" cy="24" rx="14" ry="20" fill="${(d as any).is_busy ? '#f59e0b' : (d.is_online ? '#4ade80' : '#94a3b8')}" fill-opacity="0.4" filter="blur(3px)">
+                                                        <ellipse cx="24" cy="24" rx="14" ry="20" fill="${(d as any).is_busy ? '#F9A825' : (d.is_online ? '#4ade80' : '#94a3b8')}" fill-opacity="0.4" filter="blur(3px)">
                                                             ${d.is_online ? `
                                                                 <animate attributeName="fill-opacity" values="0.4;0.7;0.4" dur="2s" repeatCount="indefinite" />
                                                                 <animate attributeName="rx" values="14;16;14" dur="2s" repeatCount="indefinite" />
@@ -365,7 +365,7 @@ export default function Dispatch() {
                                                         
                                                         <!-- Ring 2 (Outer Pulse - Only for Active) -->
                                                         ${d.is_online ? `
-                                                            <ellipse cx="24" cy="24" rx="14" ry="20" fill="${(d as any).is_busy ? '#f59e0b' : '#4ade80'}" fill-opacity="0.3">
+                                                            <ellipse cx="24" cy="24" rx="14" ry="20" fill="${(d as any).is_busy ? '#F9A825' : '#4ade80'}" fill-opacity="0.3">
                                                                 <animate attributeName="rx" values="14;24;14" dur="2s" repeatCount="indefinite" />
                                                                 <animate attributeName="ry" values="20;32;20" dur="2s" repeatCount="indefinite" />
                                                                 <animate attributeName="fill-opacity" values="0.3;0;0.3" dur="2s" repeatCount="indefinite" />
@@ -387,11 +387,11 @@ export default function Dispatch() {
                                                             
                                                             <!-- Beacons for Ongoing Job -->
                                                             ${(d as any).is_busy ? `
-                                                                <rect x="18" y="27" width="4" height="2" fill="#f59e0b">
-                                                                    <animate attributeName="fill" values="#fbbf24;#78350f;#fbbf24" dur="0.8s" repeatCount="indefinite" />
+                                                                <rect x="18" y="27" width="4" height="2" fill="#F9A825">
+                                                                    <animate attributeName="fill" values="#FDD835;#78350f;#FDD835" dur="0.8s" repeatCount="indefinite" />
                                                                 </rect>
-                                                                <rect x="26" y="27" width="4" height="2" fill="#f59e0b">
-                                                                    <animate attributeName="fill" values="#78350f;#fbbf24;#78350f" dur="0.8s" repeatCount="indefinite" />
+                                                                <rect x="26" y="27" width="4" height="2" fill="#F9A825">
+                                                                    <animate attributeName="fill" values="#78350f;#FDD835;#78350f" dur="0.8s" repeatCount="indefinite" />
                                                                 </rect>
                                                             ` : ''}
 
@@ -464,7 +464,7 @@ export default function Dispatch() {
                                                     <>
                                                         <h4 className="font-bold text-sm text-slate-900">{drivers.find(d => d.driver_id === selectedId)!.full_name}</h4>
                                                         <div className="flex items-center gap-2 mt-2">
-                                                            <div className={`w-2.5 h-2.5 rounded-full ${drivers.find(d => d.driver_id === selectedId)?.is_busy ? 'bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.5)]' : (drivers.find(d => d.driver_id === selectedId)?.is_online ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]' : 'bg-slate-400')}`} />
+                                                            <div className={`w-2.5 h-2.5 rounded-full ${drivers.find(d => d.driver_id === selectedId)?.is_busy ? 'bg-[#F9A825] shadow-[0_0_8px_rgba(249,168,37,0.5)]' : (drivers.find(d => d.driver_id === selectedId)?.is_online ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]' : 'bg-slate-400')}`} />
                                                             <span className="text-[10px] font-black uppercase tracking-wider text-slate-600">
                                                                 {drivers.find(d => d.driver_id === selectedId)?.is_busy ? 'On Job' : (drivers.find(d => d.driver_id === selectedId)?.is_online ? 'Online' : 'Offline')}
                                                             </span>
@@ -487,7 +487,7 @@ export default function Dispatch() {
                                                         </h4>
                                                         <p className="text-[10px] text-slate-500 mt-1 truncate">{requests.find(r => r.id === selectedId)?.pickup_address}</p>
                                                         <div className="flex items-center gap-2 mt-2">
-                                                            <div className={`w-2 h-2 rounded-full ${requests.find(r => r.id === selectedId)?.status === 'pending' ? 'bg-blue-500' : 'bg-amber-500'}`} />
+                                                            <div className={`w-2 h-2 rounded-full ${requests.find(r => r.id === selectedId)?.status === 'pending' ? 'bg-blue-500' : 'bg-[#F9A825]'}`} />
                                                             <span className="text-[10px] font-black uppercase tracking-wider text-slate-600">
                                                                 {requests.find(r => r.id === selectedId)?.status.replace('_', ' ')}
                                                             </span>
@@ -497,7 +497,7 @@ export default function Dispatch() {
                                                                 setAssigningReqId(selectedId);
                                                                 setIsAssignModalOpen(true);
                                                             }}
-                                                            className="w-full mt-3 bg-amber-500 text-black text-[10px] font-bold py-1.5 rounded-lg hover:bg-amber-600 transition-colors pointer-events-auto"
+                                                            className="w-full mt-3 bg-[#F9A825] text-white text-[10px] font-bold py-1.5 rounded-lg hover:bg-[#e0961f] transition-colors pointer-events-auto"
                                                         >
                                                             Dispatch Driver
                                                         </button>
@@ -527,8 +527,8 @@ export default function Dispatch() {
                                         <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
                                         {requests.filter(r => r.status === 'pending').length} Pending
                                     </div>
-                                    <div className="glass-panel px-3 py-1.5 flex items-center gap-2 text-xs font-bold text-amber-500 border border-white/10 shadow-lg">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                                    <div className="glass-panel px-3 py-1.5 flex items-center gap-2 text-xs font-bold text-[#F9A825] border border-white/10 shadow-lg">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-[#F9A825]" />
                                         {requests.filter(r => ['dispatched', 'en_route', 'in_progress', 'accepted'].includes(r.status)).length} Active
                                     </div>
                                 </div>

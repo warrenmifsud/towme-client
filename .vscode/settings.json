@@ -1,4 +1,19 @@
 {
+    "deno.enable": true,
+    "deno.lint": true,
+    "deno.unstable": [],
+    "deno.enablePaths": [
+        "backend/supabase/functions",
+        "./backend/supabase/functions"
+    ],
+    "deno.config": "./backend/supabase/functions/deno.json",
+    "deno.suggest.imports.hosts": {
+        "https://esm.sh": true
+    },
     "css.lint.unknownAtRules": "ignore",
-    "scss.lint.unknownAtRules": "ignore"
+    "scss.lint.unknownAtRules": "ignore",
+    "less.lint.unknownAtRules": "ignore",
+    "files.associations": {
+        "*.css": "tailwindcss"
+    }
 }

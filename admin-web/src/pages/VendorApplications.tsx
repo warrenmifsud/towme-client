@@ -50,7 +50,11 @@ export default function VendorApplications() {
         if (error) {
             console.error('Error fetching applications:', error);
         } else if (data) {
-            setApplications(data);
+            // GOC-RMC Mandate: Deduplication Logic
+            // Ensure unique request_id (id) to prevent cartesian product artifacts
+            const uniqueApps = Array.from(new Map(data.map(app => [app.id, app])).values());
+            console.log(`[GOC Security] Fetched ${data.length} rows, Deduplicated to ${uniqueApps.length} unique applications.`);
+            setApplications(uniqueApps);
         }
         setLoading(false);
     }
@@ -181,7 +185,7 @@ export default function VendorApplications() {
                     <button
                         onClick={() => setFilter('pending')}
                         className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all whitespace-nowrap ${filter === 'pending'
-                            ? 'bg-amber-500 text-slate-900 shadow-lg shadow-amber-500/20'
+                            ? 'bg-[#F9A825] text-slate-900 shadow-lg shadow-[#F9A825]/20'
                             : 'text-theme-secondary hover:text-theme-primary hover:bg-white/5'
                             }`}
                     >
@@ -229,11 +233,11 @@ export default function VendorApplications() {
                     filteredApplications.map(app => (
                         <div
                             key={app.id}
-                            className={`glass-panel p-6 flex flex-col md:flex-row gap-6 relative overflow-hidden transition-all duration-300 ${!app.is_read ? 'border-orange-500/30 shadow-[0_0_20px_rgba(249,115,22,0.1)]' : 'border-white/5'}`}
+                            className={`glass-panel p-6 flex flex-col md:flex-row gap-6 relative overflow-hidden transition-all duration-300 ${!app.is_read ? 'border-[#F9A825]/30 shadow-[0_0_20px_rgba(249,168,37,0.1)]' : 'border-white/5'}`}
                         >
                             {/* Unread Indicator */}
                             {!app.is_read && (
-                                <div className="absolute top-0 left-0 w-1 h-full bg-amber-500 animate-pulse"></div>
+                                <div className="absolute top-0 left-0 w-1 h-full bg-[#F9A825] animate-pulse"></div>
                             )}
                             {/* Status Indicator */}
                             <div className={`absolute top-0 right-0 px-4 py-1 text-xs font-bold uppercase tracking-widest rounded-bl-xl border-l border-b border-white/10
@@ -274,7 +278,7 @@ export default function VendorApplications() {
                                     <div>
                                         <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Contact Email</p>
                                         <div className="flex items-center gap-2 text-theme-secondary text-sm">
-                                            <Mail size={14} className="text-amber-500" />
+                                            <Mail size={14} className="text-[#F9A825]" />
                                             {app.email}
                                         </div>
                                     </div>
@@ -283,7 +287,7 @@ export default function VendorApplications() {
                                     <div>
                                         <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Location</p>
                                         <div className="flex items-center gap-2 text-theme-secondary text-sm">
-                                            <MapPin size={14} className="text-amber-500" />
+                                            <MapPin size={14} className="text-[#F9A825]" />
                                             {app.shop_address}
                                         </div>
                                     </div>
@@ -311,7 +315,7 @@ export default function VendorApplications() {
                                 <div className="flex md:flex-col gap-3 justify-center border-t md:border-t-0 md:border-l border-white/5 pt-4 md:pt-0 md:pl-6 min-w-[140px] z-10 relative">
                                     <button
                                         onClick={() => openRejectionModal(app)}
-                                        className="glass-button bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 border-amber-500/30 flex items-center justify-center gap-2"
+                                        className="glass-button bg-[#F9A825]/10 hover:bg-[#F9A825]/20 text-[#F9A825] border-[#F9A825]/30 flex items-center justify-center gap-2"
                                     >
                                         <Mail size={18} /> Revision
                                     </button>
@@ -372,7 +376,7 @@ export default function VendorApplications() {
                                     </button>
                                     <button
                                         onClick={() => analyzeApplication(app)}
-                                        className="glass-button bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border-amber-500/30 flex items-center justify-center gap-2"
+                                        className="glass-button bg-[#F9A825]/10 hover:bg-[#F9A825]/20 text-[#F9A825] border-[#F9A825]/30 flex items-center justify-center gap-2"
                                     >
                                         <Loader2 size={18} className={analyzing ? "animate-spin" : ""} /> Verify
                                     </button>

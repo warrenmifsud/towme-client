@@ -7,6 +7,8 @@ export default {
   theme: {
     extend: {
       colors: {
+        primary: '#F9A825', // Solid Neutral Light Orange
+        secondary: '#1A1C2E', // Midnight Blue
         glass: {
           100: 'rgba(255, 255, 255, 0.1)',
           200: 'rgba(255, 255, 255, 0.2)',

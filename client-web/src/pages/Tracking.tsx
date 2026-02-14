@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { Truck, Navigation, Clock, ShieldCheck, ArrowLeft, Phone, Radio, Loader2 } from 'lucide-react';
-import { APIProvider, Map, Marker } from '@vis.gl/react-google-maps';
+import { Truck, Navigation, Clock, ShieldCheck, ArrowLeft, Phone, Radio, Loader2, Info } from 'lucide-react';
+import { APIProvider, Map, Marker, useMap, useMapsLibrary } from '@vis.gl/react-google-maps';
+import brandSettings from '../config/brand_settings.json';
 
 const GOOGLE_MAPS_API_KEY = (import.meta as any).env.VITE_GOOGLE_MAPS_API_KEY || '';
 const MALTA_CENTER = { lat: 35.8989, lng: 14.5146 };
@@ -15,6 +16,11 @@ export default function Tracking() {
     const [loading, setLoading] = useState(true);
     const [eta, setEta] = useState<string | null>(null);
     const [isCancelling, setIsCancelling] = useState(false);
+    const [distanceText, setDistanceText] = useState<string>('--');
+    const [arrivalImminent, setArrivalImminent] = useState(false); // Task 3: Real-time State
+
+    // NEW_ERA Check
+    const isNewEra = brandSettings.features.NEW_ERA_ENABLED;
 
     const handleCancel = async () => {
         if (!confirm("Are you sure you want to cancel the request?")) return;
@@ -33,7 +39,6 @@ export default function Tracking() {
             setIsCancelling(false);
         }
     };
-    const [distanceText, setDistanceText] = useState<string>('--');
 
     useEffect(() => {
         fetchRequest();
@@ -47,8 +52,20 @@ export default function Tracking() {
                 })
             .subscribe();
 
-        return () => { subscription.unsubscribe(); };
-    }, [requestId]);
+        // Task 3: Listen for AI Dispatch "Very Close" Event
+        const logisticsChannel = supabase.channel('logistics')
+            .on('broadcast', { event: 'arrival_imminent' }, payload => {
+                if (payload.payload.driver_id === request?.driver_id) {
+                    setArrivalImminent(true);
+                }
+            })
+            .subscribe();
+
+        return () => {
+            subscription.unsubscribe();
+            supabase.removeChannel(logisticsChannel);
+        };
+    }, [requestId, request?.driver_id]);
 
     useEffect(() => {
         if (!request?.driver_id) return;
@@ -62,12 +79,20 @@ export default function Tracking() {
                 filter: `driver_id=eq.${request.driver_id}`
             }, payload => {
                 setDriver((prev: any) => ({ ...prev, ...payload.new }));
-                calculateLiveEta(payload.new.location);
+                // calculateLiveEta call removed here as Directions component handles it or we keep it for text
+                // We will keep text calculation for the UI stats, but Map Polyline is separate
             })
             .subscribe();
 
         return () => { driverSub.unsubscribe(); };
     }, [request?.driver_id]);
+
+    // Keep this for the UI stats text
+    useEffect(() => {
+        if (driver?.location) {
+            calculateLiveEta(driver.location);
+        }
+    }, [driver?.location]);
 
     async function calculateLiveEta(locationStr: string) {
         if (!window.google || !locationStr || !request) return;
@@ -105,7 +130,7 @@ export default function Tracking() {
     async function fetchDriverStatus(driverId: string) {
         const { data } = await supabase
             .from('driver_status')
-            .select('*, profiles(full_name)')
+            .select('*, profiles(full_name, avatar_url)') // Fetch avatar
             .eq('driver_id', driverId)
             .single();
         setDriver(data);
@@ -130,6 +155,7 @@ export default function Tracking() {
     };
 
     const driverLocation = driver?.location ? getDriverCoords(driver.location) : null;
+    const isB2BFinishing = driver?.is_eligible_for_b2b; // Task 1/2: B2B Status
 
     return (
         <APIProvider apiKey={GOOGLE_MAPS_API_KEY}>
@@ -146,20 +172,25 @@ export default function Tracking() {
                         >
                             <Marker position={pickupLocation} />
                             {isAccepted && driverLocation && (
-                                <Marker
-                                    position={driverLocation}
-                                    icon={{
-                                        url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                <rect x="1" y="3" width="15" height="13"></rect>
-                                                <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
-                                                <circle cx="5.5" cy="18.5" r="2.5"></circle>
-                                                <circle cx="18.5" cy="18.5" r="2.5"></circle>
-                                            </svg>
-                                        `)}`,
-                                        scaledSize: { width: 48, height: 48 } as any
-                                    }}
-                                />
+                                <>
+                                    <Marker
+                                        position={driverLocation}
+                                        icon={{
+                                            // Task 2: Solid #F9A825 Truck Icon
+                                            url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="#F9A825" stroke="none">
+                                                    <path d="M1 3h15v13h-15z" />
+                                                    <path d="M16 8h4l3 3v5h-7v-8z" />
+                                                    <circle cx="5.5" cy="18.5" r="2.5" fill="#F9A825" />
+                                                    <circle cx="18.5" cy="18.5" r="2.5" fill="#F9A825" />
+                                                </svg>
+                                            `)}`,
+                                            scaledSize: { width: 48, height: 48 } as any
+                                        }}
+                                    />
+                                    {/* Task 3: Polyline Routing */}
+                                    <Directions origin={driverLocation} destination={pickupLocation} />
+                                </>
                             )}
                         </Map>
                     ) : (
@@ -184,8 +215,18 @@ export default function Tracking() {
                         </div>
                     </div>
 
-                    {/* Task 6: Arriving Now Notification */}
-                    {request?.status === 'en_route' && (
+                    {/* Task 2: B2B Banner */}
+                    {isNewEra && isB2BFinishing && (
+                        <div className="w-full bg-blue-900/90 border border-blue-500/30 backdrop-blur-md py-3 px-6 rounded-2xl shadow-lg flex items-center justify-between animate-slide-down">
+                            <div className="flex items-center gap-3">
+                                <Info className="text-blue-400" size={20} />
+                                <span className="text-blue-100 font-bold text-xs uppercase tracking-wide">Your driver is finishing a tow nearby.</span>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Task 3: Arriving Now Notification (Socket Trigger or Distance) */}
+                    {(arrivalImminent || request?.status === 'en_route' && distanceText.includes('0.3 km')) && (
                         <div className="w-full bg-amber-500 py-3 px-6 rounded-2xl shadow-[0_10px_40px_rgba(245,158,11,0.4)] animate-bounce flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 <Radio className="text-black animate-pulse" size={20} />
@@ -231,13 +272,20 @@ export default function Tracking() {
                             <div className="space-y-8">
                                 <div className="flex justify-between items-center">
                                     <div className="flex items-center gap-5">
-                                        <div className="w-16 h-16 rounded-[24px] bg-amber-500 flex items-center justify-center text-black shadow-gold-glow relative">
-                                            <Truck size={32} />
+                                        <div className="w-16 h-16 rounded-[24px] bg-amber-500 flex items-center justify-center text-black shadow-gold-glow relative overflow-hidden">
+                                            {/* Task 3: Driver Profile or Truck Icon */}
+                                            {driver?.profiles?.avatar_url ? (
+                                                <img src={driver.profiles.avatar_url} alt="Driver" className="w-full h-full object-cover" />
+                                            ) : (
+                                                <Truck size={32} />
+                                            )}
                                             <div className="absolute -top-2 -right-2 bg-green-500 w-5 h-5 rounded-full border-4 border-black"></div>
                                         </div>
                                         <div>
                                             <h3 className="font-black text-xl tracking-tight">{driver?.profiles?.full_name || 'ELITE OPERATOR'}</h3>
                                             <div className="flex items-center gap-2 mt-1">
+                                                {/* Task 3: Branding Icon */}
+                                                <div className="w-4 h-4 bg-[#1A1C2E] rounded-full flex items-center justify-center text-[8px] font-bold text-amber-500">TM</div>
                                                 <span className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Rapid Response Unit</span>
                                             </div>
                                         </div>
@@ -275,4 +323,38 @@ export default function Tracking() {
             </div>
         </APIProvider>
     );
+}
+
+function Directions({ origin, destination }: { origin: { lat: number, lng: number }, destination: { lat: number, lng: number } }) {
+    const map = useMap();
+    const routesLibrary = useMapsLibrary('routes');
+    const [directionsService, setDirectionsService] = useState<google.maps.DirectionsService>();
+    const [directionsRenderer, setDirectionsRenderer] = useState<google.maps.DirectionsRenderer>();
+
+    useEffect(() => {
+        if (!routesLibrary || !map) return;
+        setDirectionsService(new routesLibrary.DirectionsService());
+        setDirectionsRenderer(new routesLibrary.DirectionsRenderer({
+            map,
+            suppressMarkers: true, // We have our own markers
+            polylineOptions: {
+                strokeColor: '#F9A825',
+                strokeOpacity: 1.0,
+                strokeWeight: 5
+            }
+        }));
+    }, [routesLibrary, map]);
+
+    useEffect(() => {
+        if (!directionsService || !directionsRenderer) return;
+        directionsService.route({
+            origin,
+            destination,
+            travelMode: google.maps.TravelMode.DRIVING
+        }).then(response => {
+            directionsRenderer.setDirections(response);
+        });
+    }, [directionsService, directionsRenderer, origin, destination]);
+
+    return null;
 }
