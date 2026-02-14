@@ -1302,45 +1302,38 @@ export default function App() {
             {/* Visual Law Header Bar */}
             <div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: '4px', background: '#F9A825', zIndex: 50 }} />
 
-            {/* Subtle Background Glow */}
+            {/* Background Glows — identical to Login */}
             <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
                 <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-amber-500/5 rounded-full blur-[100px]" />
                 <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-blue-500/5 rounded-full blur-[100px]" />
             </div>
 
             <div className="w-full max-w-sm relative z-10">
-                {/* Brand Logo */}
-                <div className="flex flex-col items-center mb-8">
-                    <div style={{
-                        width: 64, height: 64, borderRadius: '50%', background: '#1A1C2E',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        marginBottom: 16, boxShadow: '0 4px 20px rgba(26,28,46,0.3)'
-                    }}>
-                        <span style={{ color: '#F9A825', fontWeight: 900, fontSize: 22 }}>T</span>
+                {/* Brand Logo — UNIFIED with Login: Full TowMe circle */}
+                <div className="flex flex-col items-center mb-10">
+                    <div className="flex items-center justify-center w-24 h-24 rounded-full bg-[#1A1C2E] shadow-xl mb-6 overflow-hidden">
+                        <div className="flex items-center justify-center">
+                            <span className="text-white font-black text-xl tracking-tighter">TOW</span>
+                            <span className="text-[#F9A825] font-black text-xl tracking-tighter">ME</span>
+                        </div>
                     </div>
-                    <h1 style={{ fontSize: 26, fontWeight: 900, letterSpacing: '-0.02em', color: '#1A1C2E', marginBottom: 4 }}>
-                        Setup Password
-                    </h1>
-                    <p style={{ color: '#888', fontSize: 12, letterSpacing: '0.05em' }}>
-                        SECURE YOUR DRIVER ACCOUNT
-                    </p>
+                    <div className="text-center">
+                        <p className="text-xs font-bold tracking-[0.2em] text-amber-500 uppercase">
+                            Setup Password
+                        </p>
+                    </div>
                 </div>
 
                 {/* Password Error/Validation Alert */}
                 {authError && (
-                    <div style={{
-                        background: '#DC2626', color: '#fff', padding: '12px 16px',
-                        borderRadius: 12, marginBottom: 16, fontSize: 13, fontWeight: 700,
-                        display: 'flex', alignItems: 'center', gap: 8
-                    }}>
-                        <span style={{ fontSize: 16 }}>⛔</span> {authError}
+                    <div className="bg-red-50 border border-red-200 rounded-xl p-3 flex items-start gap-3 mb-4">
+                        <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+                        <p className="text-[11px] text-red-600 font-medium">{authError}</p>
                     </div>
                 )}
 
-                <div style={{
-                    background: '#fff', border: '2px solid #F9A825', borderRadius: 24,
-                    padding: 2, boxShadow: '0 4px 24px rgba(249,168,37,0.12)'
-                }}>
+                {/* Form Card — UNIFIED with Login card style */}
+                <div className="w-full bg-white border border-slate-200 rounded-[2.5rem] p-8 shadow-2xl shadow-slate-200/50">
                     <form onSubmit={async (e) => {
                         e.preventDefault();
                         setAuthError(null);
@@ -1383,102 +1376,76 @@ export default function App() {
                         } finally {
                             setResetLoading(false);
                         }
-                    }} style={{ padding: 28 }}>
-                        <div style={{ marginBottom: 20 }}>
-                            <label style={{
-                                fontSize: 10, fontWeight: 900, textTransform: 'uppercase' as const,
-                                letterSpacing: '0.2em', color: '#888', paddingLeft: 16, display: 'block', marginBottom: 6
-                            }}>New Password</label>
-                            <div style={{ position: 'relative' }}>
-                                <div style={{
-                                    position: 'absolute', left: 20, top: '50%', transform: 'translateY(-50%)',
-                                    color: '#999'
-                                }}>
-                                    <Lock size={18} />
-                                </div>
-                                <input
-                                    type="password"
-                                    required
-                                    value={newPassword}
-                                    onChange={(e: any) => setNewPassword(e.target.value)}
-                                    placeholder="••••••••"
-                                    style={{
-                                        width: '100%', background: '#FAFAFA', border: '1.5px solid #E5E5E5',
-                                        borderRadius: 20, padding: '18px 20px 18px 52px', fontSize: 15,
-                                        fontWeight: 700, color: '#1A1C2E', outline: 'none',
-                                        transition: 'border-color 0.2s', boxSizing: 'border-box' as const
-                                    }}
-                                    onFocus={(e) => e.target.style.borderColor = '#F9A825'}
-                                    onBlur={(e) => e.target.style.borderColor = '#E5E5E5'}
-                                />
-                            </div>
+                    }} className="space-y-5">
+                        <div className="space-y-1">
+                            <AuthInput
+                                icon={<Lock size={18} className="text-slate-400" />}
+                                label="New Password"
+                                type="password"
+                                required
+                                value={newPassword}
+                                onChange={(e: any) => setNewPassword(e.target.value)}
+                                placeholder="••••••••"
+                                className="bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-amber-500 focus:ring-amber-500/20"
+                            />
                         </div>
-                        <div style={{ marginBottom: 24 }}>
-                            <label style={{
-                                fontSize: 10, fontWeight: 900, textTransform: 'uppercase' as const,
-                                letterSpacing: '0.2em', color: '#888', paddingLeft: 16, display: 'block', marginBottom: 6
-                            }}>Confirm Password</label>
-                            <div style={{ position: 'relative' }}>
-                                <div style={{
-                                    position: 'absolute', left: 20, top: '50%', transform: 'translateY(-50%)',
-                                    color: '#999'
-                                }}>
-                                    <Lock size={18} />
-                                </div>
-                                <input
-                                    type="password"
-                                    required
-                                    value={confirmNewPassword}
-                                    onChange={(e: any) => setConfirmNewPassword(e.target.value)}
-                                    placeholder="••••••••"
-                                    style={{
-                                        width: '100%', background: '#FAFAFA', border: '1.5px solid #E5E5E5',
-                                        borderRadius: 20, padding: '18px 20px 18px 52px', fontSize: 15,
-                                        fontWeight: 700, color: '#1A1C2E', outline: 'none',
-                                        transition: 'border-color 0.2s', boxSizing: 'border-box' as const
-                                    }}
-                                    onFocus={(e) => e.target.style.borderColor = '#F9A825'}
-                                    onBlur={(e) => e.target.style.borderColor = '#E5E5E5'}
-                                />
-                            </div>
+                        <div className="space-y-1">
+                            <AuthInput
+                                icon={<Lock size={18} className="text-slate-400" />}
+                                label="Confirm Password"
+                                type="password"
+                                required
+                                value={confirmNewPassword}
+                                onChange={(e: any) => setConfirmNewPassword(e.target.value)}
+                                placeholder="••••••••"
+                                className="bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-amber-500 focus:ring-amber-500/20"
+                            />
                         </div>
-                        <button type="submit" disabled={resetLoading} style={{
-                            width: '100%', padding: '16px 0', borderRadius: 16,
-                            background: '#F9A825', color: '#1A1C2E', fontWeight: 900,
-                            fontSize: 14, border: 'none', cursor: 'pointer',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                            opacity: resetLoading ? 0.7 : 1, transition: 'opacity 0.2s, transform 0.15s',
-                            letterSpacing: '0.1em'
-                        }}
-                            onMouseOver={(e) => (e.currentTarget.style.transform = 'scale(1.02)')}
-                            onMouseOut={(e) => (e.currentTarget.style.transform = 'scale(1)')}>
-                            {resetLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <span>ACTIVATE ACCOUNT</span>}
+
+                        <button
+                            type="submit"
+                            disabled={resetLoading}
+                            style={{ backgroundColor: brandSettings.brand.colors.primary }}
+                            className="w-full py-4 rounded-xl text-white font-black text-sm uppercase tracking-wider shadow-lg shadow-amber-500/30 hover:brightness-110 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 mt-4"
+                        >
+                            {resetLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><span>ACTIVATE ACCOUNT</span><ChevronRight size={16} /></>}
                         </button>
                     </form>
                 </div>
 
                 {/* Security Notice */}
-                <p style={{
-                    textAlign: 'center' as const, color: '#aaa', fontSize: 10,
-                    marginTop: 16, letterSpacing: '0.05em'
-                }}>
-                    🔒 Your password is encrypted end-to-end via Supabase Auth
+                <p className="text-center text-[10px] font-bold uppercase tracking-widest text-slate-400 mt-6">
+                    🔒 Encrypted end-to-end via Supabase Auth
                 </p>
             </div>
 
-            {/* W.M Coding Credit Anchor */}
+            {/* W.M Coding Signature — Sovereign Hover Card */}
             <a
                 href="https://wmcoding.com"
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{
-                    position: 'fixed', bottom: 12, right: 16,
-                    fontSize: 9, color: '#ccc', textDecoration: 'none',
-                    letterSpacing: '0.15em', fontWeight: 700,
-                    transition: 'color 0.2s, transform 0.2s'
+                    position: 'fixed', bottom: 24, right: 24,
+                    fontSize: 10, color: '#94a3b8', textDecoration: 'none',
+                    letterSpacing: '0.15em', fontWeight: 800,
+                    background: '#FFFFFF', border: '1px solid #E2E8F0',
+                    padding: '8px 16px', borderRadius: 12,
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    zIndex: 50
                 }}
-                onMouseOver={(e) => { e.currentTarget.style.color = '#F9A825'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-                onMouseOut={(e) => { e.currentTarget.style.color = '#ccc'; e.currentTarget.style.transform = 'translateY(0)'; }}
+                onMouseOver={(e) => {
+                    e.currentTarget.style.color = '#F9A825';
+                    e.currentTarget.style.borderColor = '#F9A825';
+                    e.currentTarget.style.transform = 'translateY(-3px)';
+                    e.currentTarget.style.boxShadow = '0 8px 24px rgba(249,168,37,0.2)';
+                }}
+                onMouseOut={(e) => {
+                    e.currentTarget.style.color = '#94a3b8';
+                    e.currentTarget.style.borderColor = '#E2E8F0';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.06)';
+                }}
             >
                 Powered by W.M Coding
             </a>
